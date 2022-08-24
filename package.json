@@ -1,0 +1,34 @@
+{
+  "name": "zerglingbot",
+  "version": "0.1.0",
+  "description": "Chat bot for the Dada78641 Twitch channel",
+  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "files": [
+    "packages/",
+    "package.json",
+    "license.md",
+    "readme.md"
+  ],
+  "keywords": [
+    "Twitch",
+    "IRC",
+    "StarCraft"
+  ],
+  "bin": {
+    "zerglingbot.js": "./bin/zerglingbot.js"
+  },
+  "homepage": "https://github.com/msikma/zerglingbot",
+  "repository": "https://github.com/msikma/zerglingbot",
+  "author": "Michiel Sikma <michiel@sikma.org>",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^27.0.6"
+  },
+  "dependencies": {
+    "zerglingbot-cli": "^0.1.0"
+  }
+}
