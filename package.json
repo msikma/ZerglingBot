@@ -1,7 +1,7 @@
 {
   "name": "zerglingbot",
   "version": "0.1.0",
-  "description": "Bot for the Dada78641 Twitch channel",
+  "description": "Bot for the Dada78641 Twitch stream",
   "main": "index.js",
   "private": true,
   "workspaces": [
