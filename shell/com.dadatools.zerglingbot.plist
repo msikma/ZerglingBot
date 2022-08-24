@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.dadatools.zerglingbot</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/local/bin/node</string>
+    <string>--no-warnings=ExperimentalWarnings</string>
+    <string>/Users/msikma/Projects/zerglingbot/bin/zerglingbot.js</string>
+    <string>--log-dates</string>
+  </array>
+  
+  <key>StandardOutPath</key>
+  <string>/Users/msikma/.config/zerglingbot/log.txt</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/msikma/.config/zerglingbot/error.txt</string>
+
+  <key>Nice</key>
+  <integer>0</integer>
+
+  <key>StartInterval</key>
+  <integer>5</integer>
+
+  <key>ThrottleInterval</key>
+  <integer>5</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+</dict>
+</plist>

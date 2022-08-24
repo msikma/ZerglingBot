@@ -1,0 +1,33 @@
+{
+  "name": "zerglingbot-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Twitch chat bot for the dada78641 channel",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "homepage": "https://github.com/msikma/zerglingbot",
+  "repository": "https://github.com/msikma/zerglingbot",
+  "author": "Michiel Sikma <michiel@sikma.org>",
+  "license": "MIT",
+  "dependencies": {
+    "@twurple/api": "^5.1.0",
+    "@twurple/auth": "^5.1.0",
+    "@twurple/pubsub": "^5.1.0",
+    "adm-zip": "^0.5.9",
+    "chalk": "^4.1.2",
+    "chalk-template": "https://github.com/msikma/chalk-template#hybrid",
+    "escape-string-regexp": "^4.0.0",
+    "fast-fuzzy": "^1.11.2",
+    "fast-glob": "^3.2.11",
+    "lodash.kebabcase": "^4.1.1",
+    "mersenne-twister": "^1.1.0",
+    "obs-websocket-js": "^4.0.3",
+    "proper-lockfile": "^4.1.2",
+    "psaux": "^0.4.0",
+    "rmfr": "^2.0.0",
+    "tempy": "^1.0.1",
+    "tmi.js": "^1.8.5"
+  }
+}
