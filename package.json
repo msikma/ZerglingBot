@@ -1,14 +1,16 @@
 {
   "name": "zerglingbot",
   "version": "0.1.0",
-  "description": "Chat bot for the Dada78641 Twitch channel",
+  "description": "Bot for the Dada78641 Twitch channel",
   "main": "index.js",
   "private": true,
   "workspaces": [
     "packages/*"
   ],
   "files": [
+    "bin/",
     "packages/",
+    "shell/",
     "package.json",
     "license.md",
     "readme.md"
