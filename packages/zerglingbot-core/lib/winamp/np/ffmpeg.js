@@ -8,8 +8,8 @@ const {fileExists} = require('../../../util/fs')
 /**
  * Returns tag information from ffmpeg (actually ffprobe).
  */
-async function getJsonFFMPEG(filename, ffprobeBin = []) {
-  return execToJSON([...ffprobeBin, `-show_format`, `-show_streams`, `-print_format`, `json`, filename])
+async function getJsonFFMPEG(filename, ffprobeBin) {
+  return execToJSON([ffprobeBin, `-show_format`, `-show_streams`, `-print_format`, `json`, filename])
 }
 
 /**

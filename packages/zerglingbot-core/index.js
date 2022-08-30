@@ -23,7 +23,7 @@ const cronTasks = require('./lib/cron/tasks')
  * 
  * Connects to the channel and starts listening for user input.
  */
-function ZerglingBot({pathConfig, pathFFMPEG, pathSay, includeDates = false} = {}) {
+function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pathBnetdata, includeDates = false} = {}) {
   const state = {
     // Reference to the OBS websocket client.
     obsClient: null,
@@ -48,7 +48,10 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathSay, includeDates = false} = {
     // Paths to command line tools.
     paths: {
       pathFFMPEG: null,
-      pathSay: null
+      pathFFProbe: null,
+      pathSay: null,
+      pathNode: null,
+      pathBnetdata: null
     },
 
     // Reference to the cron manager which handles periodic tasks.
@@ -79,7 +82,10 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathSay, includeDates = false} = {
     state.configPath = pathConfig
     state.dataPath = path.join(pathConfig, 'data')
     state.paths.pathFFMPEG = pathFFMPEG
+    state.paths.pathFFProbe = pathFFProbe
     state.paths.pathSay = pathSay
+    state.paths.pathNode = pathNode
+    state.paths.pathBnetdata = pathBnetdata
 
     await initChat()
     await initTwitch()
@@ -104,6 +110,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathSay, includeDates = false} = {
       obsClient: state.obsClient,
       config: state.config,
       configPath: state.configPath,
+      paths: state.paths,
       dataPath: state.dataPath
     })
     await mgr.init(cronTasks)

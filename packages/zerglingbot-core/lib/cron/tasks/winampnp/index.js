@@ -39,9 +39,9 @@ const haveFilesUpdated = async (winampDataPath) => {
 /**
  * Retrieves information from the Starcraft API and stores it as JSON files.
  */
-const runTaskWinampNP = ({dataPath, taskConfig}) => async (log) => {
+const runTaskWinampNP = ({dataPath, taskConfig, paths}) => async (log) => {
   if (await haveFilesUpdated(taskConfig.data_path)) {
-    await processDscData(taskConfig.data_path, taskConfig.music_path, dataPath, taskConfig.bin_ffprobe)
+    await processDscData(taskConfig.data_path, taskConfig.music_path, dataPath, paths.pathFFProbe)
   }
 }
 

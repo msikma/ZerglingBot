@@ -29,7 +29,7 @@ const writeRankFile = (filepath, data) => {
 /**
  * Retrieves information from the Starcraft API and stores it as JSON files.
  */
-const runTaskLadderInfo = ({dataPath, taskConfig}) => async (log) => {
+const runTaskLadderInfo = ({dataPath, paths, taskConfig}) => async (log) => {
   // Several filenames containing various different pieces of information.
   const fileStatus = path.join(dataPath, 'sc_status.json')
   const filePlayer = path.join(dataPath, 'sc_user.json')
@@ -39,7 +39,7 @@ const runTaskLadderInfo = ({dataPath, taskConfig}) => async (log) => {
   const pathHistory = path.join(dataPath, 'sc_history')
 
   // Run bnetdata and retrieve the player's information.
-  const res = await getPlayerData(taskConfig.player_id, taskConfig.bin_bnetdata)
+  const res = await getPlayerData(taskConfig.player_id, [paths.pathNode, paths.pathBnetdata])
 
   // Pass on the error if something went wrong somehow.
   if (!res.success) {

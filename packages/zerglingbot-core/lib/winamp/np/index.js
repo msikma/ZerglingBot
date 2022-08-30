@@ -128,7 +128,7 @@ async function getDscNowPlayingData(dscPath, musicPath, outPath, outFilePath, hi
  * 
  * If something goes wrong, this throws and simply prints the error to stdout.
  */
-async function processDscData(dscPath, musicPath, outPath, ffprobeBin = ['/usr/local/bin/ffprobe']) {
+async function processDscData(dscPath, musicPath, outPath, ffprobeBin) {
   const outFilePath = path.join(outPath, 'now_playing.json')
   const historyPath = path.join(outPath, 'np_history')
 
