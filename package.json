@@ -26,6 +26,9 @@
   "homepage": "https://github.com/msikma/zerglingbot",
   "repository": "https://github.com/msikma/zerglingbot",
   "author": "Michiel Sikma <michiel@sikma.org>",
+  "engines" : { 
+    "node" : ">=16.0.0"
+  },
   "license": "MIT",
   "devDependencies": {
     "jest": "^27.0.6"

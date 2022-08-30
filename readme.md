@@ -7,6 +7,7 @@ The primary bot for the [Dada78641 Twitch stream](https://www.twitch.tv/dada7864
 * Twitch chat bot
 * Twitch API client interface (including PubSub)
 * OBS websocket interface
+* Backend tools for obtaining data, e.g. from StarCraft and Winamp
 
 These components work together to operate the stream.
 
@@ -107,6 +108,14 @@ To connect to Twitch chat, you need to have a chatbot application registered and
     and get the access token after it redirects
 
 For more information, see Twitch's [Getting OAuth Access Tokens](https://dev.twitch.tv/docs/authentication/getting-tokens-oauth#examples-of-the-three-flows) page.
+
+## Prerequisites
+
+* Node v16.0 or up
+* OBS websocket v4.9
+* [ffmpeg](https://ffmpeg.org/)
+* [bnetdata](https://github.com/msikma/bnetdata) – needed for the StarCraft data component
+* [Dada Skin Changer](https://github.com/msikma/dada-skin-changer) – needed for communicating with the Winamp instance
 
 ## Links
 
