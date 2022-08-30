@@ -25,7 +25,10 @@ const initFromCli = async args => {
       console.log(progError(`another instance is already running.`))
     }
     else {
-      console.log(progError(`${String(err)}.`))
+      console.error(progError(`${String(err)}.`))
+      if (err.stack) {
+        console.error(err.stack)
+      }
     }
   }
 }

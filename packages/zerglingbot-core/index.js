@@ -106,13 +106,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
    * This runs periodic tasks that usually deal directly with OBS.
    */
   async function initCronManager() {
-    const mgr = createCronManager({
-      obsClient: state.obsClient,
-      config: state.config,
-      configPath: state.configPath,
-      paths: state.paths,
-      dataPath: state.dataPath
-    })
+    const mgr = createCronManager(state)
     await mgr.init(cronTasks)
     state.cronManager = mgr
   }

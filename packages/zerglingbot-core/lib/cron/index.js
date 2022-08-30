@@ -5,7 +5,7 @@ const {sleep} = require('../../util/misc')
 const tasks = require('./tasks')
 
 /** Stream state. */
-const state = {
+const cronState = {
   /** List of actively running cron tasks. */
   tasks: []
 }
@@ -23,9 +23,7 @@ const getTaskConfig = (config, name) => {
  * 
  * Tasks can be cleared with endCronTask().
  */
-const startCronTask = (name, task, context, time) => {
-  const {config} = context
-
+const startCronTask = (name, task, state, time) => {
   const taskState = {
     /** Whether the task threw an error last time it was ran. */
     hasErrored: false,
@@ -41,7 +39,14 @@ const startCronTask = (name, task, context, time) => {
       }
       await sleep(time)
       try {
-        await task({...context, taskConfig: getTaskConfig(config, name)})((...args) => console.log(`[task ${name}]`, ...args))
+        const context = {
+          obsClient: state.obsClient,
+          config: state.config,
+          configPath: state.configPath,
+          paths: state.paths,
+          dataPath: state.dataPath
+        }
+        await task({...context, taskConfig: getTaskConfig(state.config, name)})((...args) => console.log(`[task ${name}]`, ...args))
         taskState.hasErrored = false
       }
       catch (err) {
@@ -62,23 +67,23 @@ const startCronTask = (name, task, context, time) => {
   loop()
   console.log(`[task ${name}] Task started.`)
 
-  state.tasks[name] = taskState
+  cronState.tasks[name] = taskState
 }
 
 /**
  * Stops a currently running cron task.
  */
 const endCronTask = (name) => {
-  state.tasks[name].mustExit = true
+  cronState.tasks[name].mustExit = true
 }
 
 /**
  * Creates a cron manager for handling recurring tasks.
  */
-const createCronManager = (context) => {
+const createCronManager = (state) => {
   const init = () => {
     for (const task of Object.values(tasks)) {
-      startCronTask(task.name, task.task, context, task.delay)
+      startCronTask(task.name, task.task, state, task.delay)
     }
   }
   const destroy = () => {
