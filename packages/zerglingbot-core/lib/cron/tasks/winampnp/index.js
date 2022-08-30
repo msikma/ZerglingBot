@@ -25,12 +25,11 @@ const haveFilesUpdated = async (winampDataPath) => {
   let hasChanged = false
   for (const file of watchFiles) {
     const data = await getFileData(path.join(winampDataPath, file))
-    let lastContent = state.lastContent[file]
-    if (!lastContent) lastContent = null
-    if (lastContent === data) {
+    if (!state.lastContent[file]) state.lastContent[file] = null
+    if (state.lastContent[file] === data) {
       continue
     }
-    lastContent = data
+    state.lastContent[file] = data
     hasChanged = true
   }
   return hasChanged
