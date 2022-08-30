@@ -7,13 +7,13 @@ const {log} = require('./log')
 /**
  * Executes any relevant command triggers for a given incoming message.
  */
-const executeCommandTriggers = (text, recognizedCmds, context, config, cmdChar = '!') => {
+const executeCommandTriggers = (text, recognizedCmds, context, actionConfig, cmdChar = '!') => {
   const [trigger, remainder] = getCommandTrigger(text, cmdChar)
 
   const command = findCommand(trigger, recognizedCmds)
   if (command) {
     log`Matched command trigger: {green ${command.name}} (trigger: {red ${cmdChar}${trigger}})`
-    command.action(context, sliceRemainder(command, remainder), config[command.name] ?? {}, recognizedCmds)
+    command.action(context, sliceRemainder(command, remainder), actionConfig[command.name] ?? {}, recognizedCmds)
   }
 
   return [trigger !== null, trigger, command]
@@ -22,13 +22,13 @@ const executeCommandTriggers = (text, recognizedCmds, context, config, cmdChar =
 /**
  * Executes any relevant redemption triggers for a given incoming message.
  */
-const executeRedemptionTriggers = (msg, recognizedRedemptions, context, config) => {
+const executeRedemptionTriggers = (msg, recognizedRedemptions, context, actionConfig) => {
   const id = getRedemptionID(msg)
 
   const redemption = findRedemption(id, recognizedRedemptions)
   if (redemption) {
     log`Matched redemption trigger: {green ${redemption.name}} (type: {red ${redemption.type}})`
-    redemption.action(context, redemption.type, msg.message, config[redemption.name], msg)
+    redemption.action(context, redemption.type, msg.message, actionConfig[redemption.name], msg)
   }
 
   return [redemption !== null, id, redemption]

@@ -41,7 +41,7 @@ const help = {
   help: 'Displays a list of commands, or more info about a specific command.',
   isSystemCommand: true,
   isHidden: false,
-  action: ({chatClient, target}, args, config, commands) => {
+  action: ({chatClient, target}, args, actionConfig, commands) => {
     const cmdName = getUserCommand(args.commandName)
 
     if (!cmdName) {

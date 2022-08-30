@@ -2,6 +2,7 @@
 // © MIT license
 
 const fs = require('fs').promises
+const path = require('path')
 
 /**
  * Returns a formatted string representing a song.
@@ -38,8 +39,9 @@ const song = {
   triggers: ['song', 'nowplaying'],
   takes: [],
   help: `Shows the song that's currently playing.`,
-  action: async ({chatClient, target}, args, config) => {
-    const np = await getNowPlaying(config.now_playing_file)
+  action: async ({chatClient, dataPath, target}, args, actionConfig) => {
+    const npFile = path.join(dataPath, 'now_playing.json')
+    const np = await getNowPlaying(npFile)
     if (!np.isCurrentlyPlaying) {
       return chatClient.say(target, `!Not currently playing a song.`);
     }

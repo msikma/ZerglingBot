@@ -254,7 +254,15 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     }
 
     // Run any command triggers that might exist in the message.
-    const [hasTrigger, trigger, command] = executeCommandTriggers(msg, triggerCommands, {chatClient: state.chatClient, apiClient: state.apiClient, target, context}, state.config?.actions ?? {})
+    const actionContext = {
+      chatClient: state.chatClient,
+      apiClient: state.apiClient,
+      config: state.config,
+      dataPath: state.dataPath,
+      target,
+      context
+    }
+    const [hasTrigger, trigger, command] = executeCommandTriggers(msg, triggerCommands, actionContext, state.config?.actions ?? {})
     if (hasTrigger && !command) {
       log`Attempted to use unknown trigger: {cyan !${trigger}}`
     }
