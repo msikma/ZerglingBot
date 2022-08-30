@@ -34,9 +34,15 @@ The bot requires a config file to be present at `~/.config/zerglingbot/config.js
     },
     "discord": {
       "invite_link": "https://discord.gg/link"
+    }
+  },
+  "tasks": {
+    "ladderinfo": {
+      "player_id": "bnet_username"
     },
-    "song": {
-      "now_playing_file": "/path/to/now_playing.json"
+    "winampnp": {
+      "music_path": "/path/to/music",
+      "data_path": "/path/to/music/data/winampnp"
     }
   },
   "chat": {
@@ -82,7 +88,7 @@ The bot requires a config file to be present at `~/.config/zerglingbot/config.js
       "whispers:edit"
     ],
     "username": "dada78641",
-    "id": "id"
+    "id": "1234"
   }
 }
 ```
