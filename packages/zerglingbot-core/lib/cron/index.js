@@ -2,7 +2,7 @@
 // © MIT license
 
 const {sleep} = require('../../util/misc')
-const {taskWatchWebcam, taskWatchDOSBox} = require('./tasks')
+const tasks = require('./tasks')
 
 /** Stream state. */
 const state = {
@@ -10,14 +10,22 @@ const state = {
   tasks: []
 }
 
+/** Returns task-specific config if it exists. */
+const getTaskConfig = (config, name) => {
+  if (config.tasks[name]) return {...config.tasks[name]}
+  return {}
+}
+
 /**
  * Creates and starts a cron task.
  * 
- * This task will run once every given number of milliseconds and perform some action with OBS.
+ * This task will run once every given number of milliseconds and perform some action.
  * 
  * Tasks can be cleared with endCronTask().
  */
-const startCronTask = (name, task, obs, time) => {
+const startCronTask = (name, task, context, time) => {
+  const {config} = context
+
   const taskState = {
     /** Whether the task threw an error last time it was ran. */
     hasErrored: false,
@@ -33,7 +41,7 @@ const startCronTask = (name, task, obs, time) => {
       }
       await sleep(time)
       try {
-        await task(obs)((...args) => console.log(`[task ${name}]`, ...args))
+        await task({...context, taskConfig: getTaskConfig(config, name)})((...args) => console.log(`[task ${name}]`, ...args))
         taskState.hasErrored = false
       }
       catch (err) {
@@ -67,14 +75,16 @@ const endCronTask = (name) => {
 /**
  * Creates a cron manager for handling recurring tasks.
  */
-const createCronManager = (obsClient) => {
+const createCronManager = (context) => {
   const init = () => {
-    startCronTask('webcam', taskWatchWebcam, obsClient, 1000)
-    startCronTask('dosbox', taskWatchDOSBox, obsClient, 1000)
+    for (const task of Object.values(tasks)) {
+      startCronTask(task.name, task.task, context, task.delay)
+    }
   }
   const destroy = () => {
-    endCronTask('webcam')
-    endCronTask('dosbox')
+    for (const task of Object.values(tasks)) {
+      endCronTask(task.name)
+    }
   }
   return {
     init,

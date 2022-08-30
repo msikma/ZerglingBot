@@ -18,7 +18,9 @@ const state = {
  * 
  * If the webcam is not active, the image frame around it must be deactivated too.
  */
-const taskWatchDOSBox = obs => async (log) => {
+const runTaskWatchDOSBox = ({obsClient}) => async (log) => {
+  if (!obsClient) return
+  
   const {isActive, instance} = await getDOSBoxInstance()
 
   if (!isActive || (state.instance.pid === instance.pid && state.window)) {
@@ -39,11 +41,11 @@ const taskWatchDOSBox = obs => async (log) => {
 
   // Now that we have a new DOSBox instance, and a window title, set up OBS to use it.
   // There should be just one source, but loop over whatever results we get to be sure.
-  const scenes = await getAllScenes(obs, 'Game DOSBox')
-  const sources = await getSceneSources(obs, scenes, 'DOSBox', 'display_capture')
+  const scenes = await getAllScenes(obsClient, 'Game DOSBox')
+  const sources = await getSceneSources(obsClient, scenes, 'DOSBox', 'display_capture')
   for (const source of sources) {
     // Switch the source to the correct DOSBox window.
-    await obs.send('SetSourceSettings', {
+    await obsClient.send('SetSourceSettings', {
       sourceName: source.settings.sourceName,
       sourceSettings: {
         ...source.settings.sourceSettings,
@@ -53,12 +55,16 @@ const taskWatchDOSBox = obs => async (log) => {
       }
     })
     // Turn off all filters except the ones with this machine's name.
-    await switchSourceFilters(obs, [source.settings], `DOSBox ${state.window.machine}`)
+    await switchSourceFilters(obsClient, [source.settings], `DOSBox ${state.window.machine}`)
   }
 
   log('Switched DOSBox to active machine:', state.window.machine)
 }
 
 module.exports = {
-  taskWatchDOSBox
+  taskWatchDOSBox: {
+    name: 'dosbox',
+    task: runTaskWatchDOSBox,
+    delay: 1000
+  }
 }

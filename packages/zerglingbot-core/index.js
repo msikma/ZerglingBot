@@ -1,6 +1,7 @@
 // zerglingbot <https://github.com/msikma/zerglingbot>
 // © MIT license
 
+const path = require('path')
 const tmi = require('tmi.js')
 const {ApiClient} = require('@twurple/api')
 const {RefreshingAuthProvider, exchangeCode} = require('@twurple/auth')
@@ -50,7 +51,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathSay, includeDates = false} = {
       pathSay: null
     },
 
-    // Reference to cron manager which handles periodic tasks.
+    // Reference to the cron manager which handles periodic tasks.
     cronManager: null,
 
     // Interval reference used to run code periodically.
@@ -76,14 +77,15 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathSay, includeDates = false} = {
 
     state.config = await getConfig(pathConfig)
     state.configPath = pathConfig
+    state.dataPath = path.join(pathConfig, 'data')
     state.paths.pathFFMPEG = pathFFMPEG
     state.paths.pathSay = pathSay
 
     await initChat()
     await initTwitch()
     await initPubSub()
-    await initOBS()
     await initCronManager()
+    await initOBS()
     
     state.streamTools.chatTTS = await createChatTTS(state.obsClient, state.chatClient, pathFFMPEG, pathSay)
 
@@ -93,12 +95,17 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathSay, includeDates = false} = {
   }
 
   /**
-   * Initializes the connection to OBS.
+   * Initializes the cron manager.
    * 
-   * If OBS is not available, this will retry until it finds it.
+   * This runs periodic tasks that usually deal directly with OBS.
    */
   async function initCronManager() {
-    const mgr = createCronManager(state.obsClient)
+    const mgr = createCronManager({
+      obsClient: state.obsClient,
+      config: state.config,
+      configPath: state.configPath,
+      dataPath: state.dataPath
+    })
     await mgr.init(cronTasks)
     state.cronManager = mgr
   }

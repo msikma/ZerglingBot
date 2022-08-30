@@ -25,6 +25,12 @@ const isFunction = obj => typeof obj === 'function'
 /** Checks whether an argument is (likely to be) a template literal. */
 const isTemplateLiteral = obj => Array.isArray(obj) && Array.isArray(obj[0]) && Array.isArray(obj[0]?.raw) && Object.isFrozen(obj[0])
 
+/** Removes nullish values from an object. */
+const objectRemoveNullish = obj => Object.fromEntries(Object.entries(obj).filter(([k, v]) => v != null))
+
+/** Removes empty string values from an object. */
+const objectRemoveEmptyStrings = obj => Object.fromEntries(Object.entries(obj).filter(([k, v]) => v !== ''))
+
 module.exports = {
   isArray,
   isError,
@@ -33,5 +39,7 @@ module.exports = {
   isNumber,
   isPlainObject,
   isString,
-  isTemplateLiteral
+  isTemplateLiteral,
+  objectRemoveNullish,
+  objectRemoveEmptyStrings
 }

@@ -3,5 +3,8 @@
 
 module.exports = {
   ...require('./dosbox'),
+  ...require('./streaminfo'),
+  ...require('./ladderinfo'),
+  ...require('./winampnp'),
   ...require('./webcam')
 }

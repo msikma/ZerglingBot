@@ -3,11 +3,13 @@
 
 const fs = require('fs').promises
 const path = require('path')
+const {ensureDir} = require('./fs')
 
 /**
  * Returns the content of the config file.
  */
 const getConfig = async configDir => {
+  await ensureDir(path.join(configDir, 'data'))
   const content = await fs.readFile(path.join(configDir, 'config.json'), 'utf8')
   return JSON.parse(content)
 }
