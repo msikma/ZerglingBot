@@ -100,7 +100,7 @@ const createChatTTS = async (obsClient, chatClient, options) => {
         log`Could not generate TTS message:`
         log(message?.data)
         log(err)
-        state.chatClient.sayToDefaultChannel(`!Could not generate TTS message! Sorry, try again later? Error ID: "${message?.data?.id ?? '(none)'}".`)
+        state.chatClient._sayFeedback([`!Could not generate TTS message! Sorry, try again later? Error ID: "${message?.data?.id ?? '(none)'}".`])
       }
     })
   }

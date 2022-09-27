@@ -2,6 +2,7 @@
 // © MIT license
 
 const {sleep} = require('../../util/misc')
+const {makeToolLogger} = require('../../util/log')
 const tasks = require('./tasks')
 
 /** Stream state. */
@@ -31,6 +32,9 @@ const startCronTask = (name, task, state, time) => {
     mustExit: false
   }
 
+  /** Logger for specifically this task. */
+  const logger = makeToolLogger('task', name, 'red')
+
   /** Loops endlessly, running the task and then awaiting the assigned sleep time. */
   const loop = async () => {
     while (true) {
@@ -46,7 +50,7 @@ const startCronTask = (name, task, state, time) => {
           paths: state.paths,
           dataPath: state.dataPath
         }
-        await task({...context, taskConfig: getTaskConfig(state.config, name)})((...args) => console.log(`[task ${name}]`, ...args))
+        await task({...context, taskConfig: getTaskConfig(state.config, name)})(logger.log)
         taskState.hasErrored = false
       }
       catch (err) {
@@ -56,16 +60,16 @@ const startCronTask = (name, task, state, time) => {
         }
         if (!taskState.hasErrored) {
           taskState.hasErrored = true
-          console.log(`[task ${name}] Error in task:`)
-          console.log(err)
-          console.log(`[task ${name}] Further errors will be silenced until the task executes successfully again.`)
+          logger.logError(`Error in task:`)
+          logger.logError(err)
+          logger.logError(`Further errors will be silenced until the task executes successfully again.`)
         }
       }
     }
   }
 
   loop()
-  console.log(`[task ${name}] Task started.`)
+  logger.log(`Task started.`)
 
   cronState.tasks[name] = taskState
 }

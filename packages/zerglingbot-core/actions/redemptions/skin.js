@@ -113,7 +113,7 @@ const skin = {
     const skinObj = await setRandomSkin(result.skin, basedir, file)
     const feedbackItems = getResultFeedback(result, skinObj, msg?.trim())
 
-    feedbackItems.forEach(item => chatClient.say(chatClient.resolveChannel(msgObject.channelId), item))
+    chatClient._sayFeedback(feedbackItems, msgObject.channelId)
 
     log`Updated Winamp skin to {blue ${skinObj.name}}`
   }

@@ -19,9 +19,9 @@ const getConfig = async configDir => {
  * 
  * If the token file does not exist, an empty object is returned.
  */
-const getToken = async configDir => {
+const getToken = async (configDir, tokenName) => {
   try {
-    const content = JSON.parse(await fs.readFile(path.join(configDir, 'token.json'), 'utf8'))
+    const content = JSON.parse(await fs.readFile(path.join(configDir, `token${tokenName ? `_${tokenName}` : ''}.json`), 'utf8'))
     return content
   }
   catch (err) {
@@ -35,9 +35,9 @@ const getToken = async configDir => {
 /**
  * Stores the latest token to the token file.
  */
-const storeToken = async (configDir, tokenData) => {
+const storeToken = async (configDir, tokenName, tokenData) => {
   const token = await getToken(configDir)
-  return fs.writeFile(path.join(configDir, 'token.json'), JSON.stringify({...token, ...tokenData}, null, 2), 'utf8')
+  return fs.writeFile(path.join(configDir, `token${tokenName ? `_${tokenName}` : ''}.json`), JSON.stringify({...token, ...tokenData}, null, 2), 'utf8')
 }
 
 module.exports = {

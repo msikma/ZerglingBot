@@ -2,15 +2,17 @@
 // © MIT license
 
 const path = require('path')
-const tmi = require('tmi.js')
+const logger = require('@d-fischer/logger')
 const {ApiClient} = require('@twurple/api')
 const {RefreshingAuthProvider, exchangeCode} = require('@twurple/auth')
 const {PubSubClient} = require('@twurple/pubsub')
+const {ChatClient} = require('@twurple/chat')
+const {unpackMeta} = require('./lib/chat')
 const {createChatTTS, pickTTSConfig} = require('./lib/tts')
 const {createCronManager} = require('./lib/cron')
 const {openObsWebsocket} = require('./lib/obs')
 const {getProgramLock} = require('./util/lock')
-const {log, logInfo, logWarn, setDateInclusion} = require('./util/log')
+const {log, logInfo, logWarn, makeToolLogger, setDateInclusion} = require('./util/log')
 const {getConfig, getToken, storeToken} = require('./util/config')
 const {executeCommandTriggers, executeRedemptionTriggers, isRewardRedemption} = require('./util/actions')
 const {checkForRestart, removeRestartFile} = require('./util/restart')
@@ -27,8 +29,12 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
   const state = {
     // Reference to the OBS websocket client.
     obsClient: null,
-    // Reference to the tmi.js client.
+    // Reference to the Twitch chat client.
     chatClient: null,
+    chatAuthProvider: null,
+    chatState: {
+      hasConnectedBefore: false
+    },
     // Reference to the Twitch API client.
     apiClient: null,
     apiAuthProvider: null,
@@ -89,8 +95,8 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
 
     logInfo`Starting ZerglingBot`
 
-    await initChat()
     await initTwitch()
+    await initChat()
     await initPubSub()
     await initCronManager()
     await initOBS()
@@ -100,6 +106,52 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     state.heartbeat = setInterval(onHeartbeat, 1000)
 
     state.isInitialized = true
+  }
+
+  /**
+   * Creates a refreshing auth provider that syncs with a local file.
+   */
+  async function createAuthProvider(authCode, name) {
+    const appCredentials = state.config.app.credentials
+    const storedToken = await getToken(state.configPath, name)
+
+    // Check to see if we have a token already. If not, create a new one using the auth code.
+    // Note that the auth code can only be used to generate a token once.
+    // If it's lost, the authorization code grant flow needs to be manually redone.
+    if (!storedToken.accessToken) {
+      await storeToken(state.configPath, name, await exchangeCode(appCredentials.client_id, appCredentials.client_secret, authCode, appCredentials.redirect_uri))
+    }
+
+    const refreshConfig = {
+      clientId: appCredentials.client_id,
+      clientSecret: appCredentials.client_secret,
+      onRefresh: newToken => storeToken(state.configPath, name, newToken)
+    }
+    const authProvider = new RefreshingAuthProvider(refreshConfig, await getToken(state.configPath, name))
+    
+    return authProvider
+  }
+
+  /**
+   * Creates a logger tool for Twitch services.
+   */
+  function createLogger(name, color) {
+    const toolLogger = makeToolLogger(name, null, color)
+    return {
+      custom: {
+        log: (level, message) => {
+          if (level === logger.LogLevel.INFO) {
+            toolLogger.log(message)
+          }
+          if (level === logger.LogLevel.WARNING) {
+            toolLogger.logWarn(message)
+          }
+          if (level <= logger.LogLevel.ERROR) {
+            toolLogger.logError(message)
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -129,26 +181,9 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
    * Initializes the Twitch API.
    */
   async function initTwitch() {
-    const appCredentials = state.config.app
+    const authProvider = await createAuthProvider(state.config.twitch.auth_code, 'api')
+    const apiClient = new ApiClient({authProvider, logger: createLogger('api', 'magenta')})
     const config = state.config.twitch
-
-    const storedToken = await getToken(state.configPath)
-
-    // Check to see if we have a token already. If not, create a new one using the auth code.
-    // Note that the auth code can only be used to generate a token once.
-    // If it's lost, the authorization code grant flow needs to be manually redone.
-    if (!storedToken.accessToken) {
-      await storeToken(state.configPath, await exchangeCode(appCredentials.client_id, appCredentials.client_secret, config.auth_code, appCredentials.redirect_uri))
-    }
-
-    const refreshConfig = {
-      clientId: appCredentials.client_id,
-      clientSecret: appCredentials.client_secret,
-      onRefresh: newToken => storeToken(state.configPath, newToken)
-    }
-
-    const authProvider = new RefreshingAuthProvider(refreshConfig, await getToken(state.configPath))
-    const apiClient = new ApiClient({authProvider})
 
     state.apiAuthProvider = authProvider
     state.apiClient = apiClient
@@ -178,31 +213,27 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
    * Connects to the chatroom and starts listening for messages.
    */
   async function initChat() {
+    const authProvider = await createAuthProvider(state.config.chat.auth_code, 'chat')
     const config = state.config.chat
+    const channels = Object.values(config.channels)
+    const chatClient = new ChatClient({authProvider, channels, logger: createLogger('chat', 'yellow')})
 
-    state.chatClient = new tmi.client({
-      identity: {
-        username: config.auth_username,
-        password: `oauth:${config.token.access_token}`
-      },
-      channels: Object.values(config.channels)
-    })
+    // 
+    chatClient.onConnect(onChatConnected)
+    chatClient.onMessage(onChatMessage)
+    
+    await chatClient.connect()
 
-    state.chatClient.on('message', onChatMessage)
-    state.chatClient.on('connected', onChatConnected)
-    state.chatClient.connect()
-
-    /** Helper function for turning a channel ID into a channel name. */
-    // TODO: resolve using: <https://twurple.js.org/reference/api/classes/HelixUserApi.html#getUserById>
-    state.chatClient.resolveChannel = id => {
-      return config.channels[id] ?? null
-    }
-    /** Helper function for pushing a message to the default channel. */
-    state.chatClient.sayToDefaultChannel = (...args) => {
-      return state.chatClient.say(Object.values(config.channels)[0], ...args)
+    /** Helper function for sending feedback after a redemption. */
+    chatClient._sayFeedback = (feedbackItems, channelID = null) => {
+      // The channel is returned as an ID. Convert it to the channel name.
+      // TODO: resolve using: <https://twurple.js.org/reference/api/classes/HelixUserApi.html#getUserById>
+      const channel = config.channels[channelID ?? config.default_channel]
+      feedbackItems.forEach(item => chatClient.say(channel, item))
     }
 
-    return true
+    state.chatAuthProvider = authProvider
+    state.chatClient = chatClient
   }
 
   /**
@@ -236,19 +267,22 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
    *   - target:   active channel, e.g. "#dada78641"
    *   - context:  object of message additional information
    *   - msg:      full message
-   *   - self:     whether this is a message by the bot itself
+   *   - meta:     metadata about the message
    */
-  function onChatMessage(target, context, msg, self) {
+  function onChatMessage(target, user, msg, metaObject) {
     // Ignore messages from the bot itself.
-    if (self) {
+    if (state.config.chat.nickname === user) {
       return
     }
+
+    // Unpack the metadata. This serves as the context for triggers.
+    const meta = unpackMeta(metaObject)
 
     // Ignore messages that redeem a reward, as we handle those with the PubSub interface.
-    if (isRewardRedemption(context)) {
+    if (isRewardRedemption(meta)) {
       return
     }
-
+    
     // Run any command triggers that might exist in the message.
     const actionContext = {
       chatClient: state.chatClient,
@@ -256,7 +290,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
       config: state.config,
       dataPath: state.dataPath,
       target,
-      context
+      context: meta
     }
     const [hasTrigger, trigger, command] = executeCommandTriggers(msg, triggerCommands, actionContext, state.config?.actions ?? {})
     if (hasTrigger && !command) {
@@ -267,8 +301,9 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
   /**
    * Handler that gets called once on connecting to the chatroom.
    */
-  function onChatConnected(addr, port) {
-    logInfo`Connected to Twitch Chat via {green ${addr}}:{yellow ${port}}`
+  function onChatConnected() {
+    logInfo`${state.chatState.hasConnectedBefore ? 'Reconnected' : 'Connected'} to Twitch chat as user {green ${state.config.chat.nickname}}`
+    state.chatState.hasConnectedBefore = true
   }
 
   return {

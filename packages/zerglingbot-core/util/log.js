@@ -32,6 +32,15 @@ const addTimestamps = str => {
 }
 
 /**
+ * Adds a prefix.
+ */
+const addPrefix = (name, subName, color, colorBright) => str => {
+  const prefix = `${color.dim('[')}${color(name)}${subName ? ` ${colorBright(subName)}` : ''}${color.dim(']')}`
+  const lines = str.split('\n').map(l => `${prefix} ${l}`)
+  return lines.join('\n')
+}
+
+/**
  * Adds a > (greater than) sign to each line.
  */
 const addQuotes = str => {
@@ -116,6 +125,23 @@ function makeLogger(localOpts = {}) {
   return (...segments) => logSegments(segments, {...localOpts, mapFns: [...localOpts.mapFns]})
 }
 
+/**
+ * Creates a tool logger which is prefixed with an identifier.
+ */
+function makeToolLogger(name, subName = null, color = 'yellow') {
+  const addToolPrefix = addPrefix(name, subName, chalk[color], chalk[`${color}Bright`])
+  const log = makeLogger({mapFns: [addToolPrefix, addTimestamps]})
+  const logInfo = makeLogger({mapFns: [addToolPrefix, addTimestamps, chalk.cyan]})
+  const logWarn = makeLogger({mapFns: [addToolPrefix, addTimestamps, chalk.yellow]})
+  const logError = makeLogger({mapFns: [addToolPrefix, addTimestamps, chalk.red], logFn: console.error})
+  return {
+    log,
+    logInfo,
+    logWarn,
+    logError
+  }
+}
+
 /** All basic logging functions. */
 const log = makeLogger({mapFns: [addTimestamps]})
 const logInfo = makeLogger({mapFns: [addTimestamps, chalk.cyan]})
@@ -144,5 +170,6 @@ module.exports = {
   setDateInclusion,
   addTimestamps,
   addQuotes,
-  addSingleQuote
+  addSingleQuote,
+  makeToolLogger
 }

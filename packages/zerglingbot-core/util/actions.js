@@ -2,6 +2,7 @@
 // © MIT license
 
 const escapeRegex = require('escape-string-regexp')
+const {unpackRedemptionData} = require('../lib/pubsub')
 const {log} = require('./log')
 
 /**
@@ -28,7 +29,7 @@ const executeRedemptionTriggers = (msg, recognizedRedemptions, context, actionCo
   const redemption = findRedemption(id, recognizedRedemptions)
   if (redemption) {
     log`Matched redemption trigger: {green ${redemption.name}} (type: {red ${redemption.type}})`
-    redemption.action(context, redemption.type, msg.message, actionConfig[redemption.name], msg)
+    redemption.action(context, redemption.type, msg.message, actionConfig[redemption.name], unpackRedemptionData(msg))
   }
 
   return [redemption !== null, id, redemption]
@@ -107,8 +108,8 @@ const getCommandTrigger = (text, cmdChar = '!') => {
 /**
  * Returns whether a message context is a reward redemption or not.
  */
-const isRewardRedemption = context => {
-  return 'custom-reward-id' in context
+const isRewardRedemption = meta => {
+  return meta.isRedemption
 }
 
 module.exports = {
