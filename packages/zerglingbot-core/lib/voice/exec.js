@@ -13,7 +13,7 @@ const {exec} = require('../../util/exec')
 /**
  * Returns a flat list of available voices.
  */
-const getAvailableVoices = async () => {
+const getLocalVoices = async () => {
   const res = await exec(getVoicesCommand(), 'utf8')
   const lines = res.stdout.trim().split('\n')
   const items = lines.map(parseVoiceLine)
@@ -53,6 +53,6 @@ const getUtteranceBuffer = async (text, voice, settings, binPaths, format = 'opu
 }
 
 module.exports = {
-  getAvailableVoices,
+  getLocalVoices,
   getUtteranceBuffer
 }

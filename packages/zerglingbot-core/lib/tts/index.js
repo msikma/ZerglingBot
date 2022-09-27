@@ -3,6 +3,7 @@
 
 const {log} = require('../../util/log')
 const {utterMessage} = require('../voice')
+const {pickTTSConfig} = require('./config')
 
 /**
  * Initializes the class that handles TTS.
@@ -23,7 +24,7 @@ const {utterMessage} = require('../voice')
  * Each message has its guid registered in the queue so that it's only uttered once.
  * Queue items are removed after a minute passes (purely for memory reasons).
  */
-const createChatTTS = async (obsClient, chatClient, pathFFMPEG, pathSay) => {
+const createChatTTS = async (obsClient, chatClient, options) => {
   const state = {
     isListening: false,
     isChatTTSMode: false,
@@ -79,7 +80,7 @@ const createChatTTS = async (obsClient, chatClient, pathFFMPEG, pathSay) => {
 
       try {
         // Retrieve an "upgraded" version of the message, with audio included.
-        const [voiceData, audioData] = await getAudioMessage(message.data)
+        const [voiceData, audioData] = await getAudioMessage(message.data, options)
 
         const messageAudioData = {
           ...message.data,
@@ -90,7 +91,7 @@ const createChatTTS = async (obsClient, chatClient, pathFFMPEG, pathSay) => {
           }
         }
 
-        log`Broadcasting TTS message: {green ${message.data.seed}}: {yellow ${message.data.text}} ({blue ${message.data.id}})`
+        log`Broadcasting TTS message: {green ${message.data.seed}}: {yellow ${message.data.text}} ({blue ${message.data.id}} {magenta ${voiceData.name}})`
 
         // Broadcast the same message back, but as tts_audio and with an audio buffer included.
         await state.obsClient.send('BroadcastCustomMessage', {realm: 'tts_audio', data: messageAudioData})
@@ -132,9 +133,10 @@ const createChatTTS = async (obsClient, chatClient, pathFFMPEG, pathSay) => {
    * 
    * The audio buffer is generated based on the message text and seed.
    */
-  const getAudioMessage = async (message) => {
+  const getAudioMessage = async (message, options) => {
     // Generate the utterance as an Opus file buffer.
-    return utterMessage(message.text, message.seed, {pathFFMPEG, pathSay}, true)
+    const {pathFFMPEG, pathSay} = options
+    return utterMessage(message.text, message.seed, {...options, binPaths: {pathFFMPEG, pathSay}, toBase64: true})
   }
 
   /**
@@ -189,5 +191,6 @@ const createChatTTS = async (obsClient, chatClient, pathFFMPEG, pathSay) => {
 }
 
 module.exports = {
-  createChatTTS
+  createChatTTS,
+  pickTTSConfig
 }

@@ -101,6 +101,4 @@ const voiceTypes = {
   },
 }
 
-module.exports = {
-  voiceTypes
-}
+module.exports = voiceTypes

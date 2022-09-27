@@ -6,7 +6,7 @@ const tmi = require('tmi.js')
 const {ApiClient} = require('@twurple/api')
 const {RefreshingAuthProvider, exchangeCode} = require('@twurple/auth')
 const {PubSubClient} = require('@twurple/pubsub')
-const {createChatTTS} = require('./lib/tts')
+const {createChatTTS, pickTTSConfig} = require('./lib/tts')
 const {createCronManager} = require('./lib/cron')
 const {openObsWebsocket} = require('./lib/obs')
 const {getProgramLock} = require('./util/lock')
@@ -87,13 +87,15 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     state.paths.pathNode = pathNode
     state.paths.pathBnetdata = pathBnetdata
 
+    logInfo`Starting ZerglingBot`
+
     await initChat()
     await initTwitch()
     await initPubSub()
     await initCronManager()
     await initOBS()
     
-    state.streamTools.chatTTS = await createChatTTS(state.obsClient, state.chatClient, pathFFMPEG, pathSay)
+    state.streamTools.chatTTS = await createChatTTS(state.obsClient, state.chatClient, {...pickTTSConfig(state.config), pathFFMPEG, pathSay})
 
     state.heartbeat = setInterval(onHeartbeat, 1000)
 

@@ -3,7 +3,8 @@
 
 module.exports = {
   ...require('./exec'),
-  ...require('./voice-types'),
+  voiceTypesLocal: require('./local/voice-types'),
+  voiceTypesRemote: require('./remote/voice-types'),
   ...require('./utter'),
   ...require('./voices')
 }

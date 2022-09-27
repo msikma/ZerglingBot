@@ -4,8 +4,10 @@
 const {getRandomFromArrayBySeed, getRandomFromArray} = require('../../util/prng')
 const {isString} = require('../../util/types')
 const {getTextLanguage} = require('../../util/text')
-const {voiceTypes} = require('./voice-types')
-const {getAvailableVoices} = require('./exec')
+const {getLocalVoices} = require('./exec')
+const localVoiceTypes = require('./local/voice-types')
+const remoteVoiceTypes = require('./remote/voice-types')
+const ttsServices = require('./remote/services')
 
 /** Removes undecorated voices from the list. */
 const removeUndecorated = voices => voices.filter(voice => voice.undecorated !== true)
@@ -25,6 +27,8 @@ const getVoiceDef = voiceValue => {
 
 /**
  * Returns a "decorated" voice, meaning with metadata included.
+ * 
+ * TODO: this is very inefficient. Fix this sometime.
  */
 const getDecoratedVoice = (voice, voiceTypes) => {
   for (const [group, data] of Object.entries(voiceTypes)) {
@@ -83,11 +87,44 @@ const getEligibleVoices = (text, gender, category, voices) => {
 }
 
 /**
+ * Returns a list of remote voices.
+ * 
+ * This just takes the content from remote/voice-types.js and flattens it.
+ */
+const getRemoteVoices = (remoteVoiceTypes, {filterTo = null} = {}) => {
+  const defaultLanguage = ['en', 'us']
+  const defaultExample = 'This is a test.'
+
+  const voices = []
+  for (const [group, data] of Object.entries(remoteVoiceTypes)) {
+    for (const voice of data.voices) {
+      voices.push({
+        name: voice,
+        language: data.language ?? defaultLanguage,
+        example: data.example ?? defaultExample,
+        service: ttsServices[data.service]
+      })
+    }
+  }
+  if (filterTo) {
+    return voices.filter(voice => voice.name === filterTo)
+  }
+
+  return voices
+}
+
+/**
  * Returns a categorized list of available voices.
  */
-const getVoiceList = async () => {
-  const voices = await getAvailableVoices()
-  return removeUndecorated(voices.map(voice => getDecoratedVoice(voice, voiceTypes)))
+const getVoiceList = async (options = {}) => {
+  if (options.useLocal) {
+    const voices = await getLocalVoices(options)
+    return removeUndecorated(voices.map(voice => getDecoratedVoice(voice, localVoiceTypes)))
+  }
+  else {
+    const voices = getRemoteVoices(remoteVoiceTypes, options)
+    return removeUndecorated(voices.map(voice => getDecoratedVoice(voice, remoteVoiceTypes)))
+  }
 }
 
 module.exports = {
