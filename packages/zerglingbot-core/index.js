@@ -241,7 +241,8 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
    */
   async function destroy() {
     clearInterval(state.heartbeat)
-    return state.chatClient.disconnect()
+    await state.chatClient.quit()
+    return
   }
 
   /**
