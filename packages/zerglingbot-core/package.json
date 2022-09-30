@@ -21,6 +21,7 @@
     "chalk": "^4.1.2",
     "chalk-template": "https://github.com/msikma/chalk-template#hybrid",
     "cheerio": "^1.0.0-rc.12",
+    "discord.js": "^14.5.0",
     "escape-string-regexp": "^4.0.0",
     "fast-fuzzy": "^1.11.2",
     "fast-glob": "^3.2.11",

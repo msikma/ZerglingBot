@@ -3,6 +3,7 @@
 
 const path = require('path')
 const logger = require('@d-fischer/logger')
+const Discord = require('discord.js')
 const {ApiClient} = require('@twurple/api')
 const {RefreshingAuthProvider, exchangeCode} = require('@twurple/auth')
 const {PubSubClient} = require('@twurple/pubsub')
@@ -43,6 +44,13 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     apiAuthProvider: null,
     apiData: {
       user: null
+    },
+    // Reference to the Discord API client.
+    discordClient: null,
+    discordData: {
+      server: null,
+      logChannel: null,
+      logErrorChannel: null
     },
 
     // Special tools for the stream.
@@ -99,6 +107,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     logInfo`Starting ZerglingBot`
 
     await initTwitch()
+    await initDiscord()
     await initChat()
     await initInterface()
     await initPubSub()
@@ -205,6 +214,40 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
   }
 
   /**
+   * Initializes the Discord API.
+   */
+  function initDiscord() {
+    const config = state.config.discord
+    const discordData = state.discordData
+    const discordClient = new Discord.Client({intents: [
+      Discord.GatewayIntentBits.GuildEmojisAndStickers,
+      Discord.GatewayIntentBits.GuildMessages,
+      Discord.GatewayIntentBits.GuildMessageReactions,
+      Discord.GatewayIntentBits.Guilds,
+      Discord.GatewayIntentBits.MessageContent
+    ]})
+
+    state.discordClient = discordClient
+
+    // Use a Promise to wrap the 'ready' event.
+    return new Promise(async (resolve, reject) => {
+      // Try to login using our token.
+      discordClient.once('ready', async () => {
+        // Retrieve basic information about our environment.
+        discordData.server = await discordClient.guilds.fetch(config.system.server)
+        discordData.logChannel = await discordClient.channels.fetch(config.system.log_channel)
+        discordData.logErrorChannel = await discordClient.channels.fetch(config.system.log_error_channel)
+        
+        logInfo`Connected to Discord API as user {green ${discordClient.user.username}}#{yellow ${discordClient.user.discriminator}}`
+
+        return resolve()
+      })
+
+      await discordClient.login(config.credentials.token)
+    })
+  }
+
+  /**
    * Initializes the PubSub interface and starts listening for messages.
    * 
    * See documentation: <https://twurple.js.org/reference/pubsub/classes/PubSubClient.html>
@@ -216,7 +259,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     // Listen for reward redemptions.
     await pubSubClient.onRedemption(userListener, msg => {
       const {userName, userId, rewardTitle, message, rewardCost} = msg
-      log`User {green ${userName}}#{yellow ${userId}} has redeemed {blue ${rewardTitle}}${message ? ': ' : ''}{red ${message ?? ''}} for {green ${rewardCost}} points`;
+      log`User {green ${userName}}#{yellow ${userId}} has redeemed {blue ${rewardTitle}}${message ? ': ' : ''}{red ${message ?? ''}} for {green ${rewardCost}} points`
       const [hasRedemption, id, redemption] = executeRedemptionTriggers(msg, triggerRedemptions, {chatClient: state.chatClient, apiClient: state.apiClient}, state.config?.actions ?? {})
     })
   }
@@ -246,6 +289,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
   async function initInterface() {
     const eventInterface = await createEventInterface({
       chatClient: state.chatClient,
+      discordClient: state.discordClient,
       apiClient: state.apiClient,
       config: state.config
     })
@@ -303,6 +347,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     // Run any command triggers that might exist in the message.
     const actionContext = {
       chatClient: state.chatClient,
+      discordClient: state.discordClient,
       eventInterface: state.eventInterface,
       apiClient: state.apiClient,
       config: state.config,

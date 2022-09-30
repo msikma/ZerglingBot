@@ -13,11 +13,15 @@ const state = {
  * 
  * If the webcam is not active, the image frame around it must be deactivated too.
  */
-const runTaskAnnouncements = ({apiClient, eventInterface, taskConfig}) => async (log) => {
+const runTaskAnnouncements = ({eventInterface, taskConfig}) => async (log) => {
   // On first run, create the task queue and add our messages.
   if (state.queue === null) {
     state.queue = createTaskQueue()
-    state.queue.addTasks(taskConfig.messages.filter(message => message.enabled))
+    const messages = await eventInterface.getChatAnnouncements()
+    const tasks = messages
+      .filter(message => message.isEnabled)
+      .map(message => ({data: message, delay: message.delay}))
+    state.queue.addTasks(tasks)
   }
 
   // Get list of messages we need to show right now.
