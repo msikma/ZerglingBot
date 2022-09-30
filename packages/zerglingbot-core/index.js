@@ -7,6 +7,7 @@ const {ApiClient} = require('@twurple/api')
 const {RefreshingAuthProvider, exchangeCode} = require('@twurple/auth')
 const {PubSubClient} = require('@twurple/pubsub')
 const {ChatClient} = require('@twurple/chat')
+const {createEventInterface} = require('./lib/event')
 const {unpackMeta} = require('./lib/chat')
 const {createChatTTS, pickTTSConfig} = require('./lib/tts')
 const {createCronManager} = require('./lib/cron')
@@ -31,6 +32,8 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     obsClient: null,
     // Reference to the Twitch chat client.
     chatClient: null,
+    // Reference to our primary interaction interface.
+    eventInterface: null,
     chatAuthProvider: null,
     chatState: {
       hasConnectedBefore: false
@@ -97,11 +100,11 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
 
     await initTwitch()
     await initChat()
+    await initInterface()
     await initPubSub()
     await initCronManager()
     await initOBS()
-    
-    state.streamTools.chatTTS = await createChatTTS(state.obsClient, state.chatClient, {...pickTTSConfig(state.config), pathFFMPEG, pathSay})
+    await initTTS()
 
     state.heartbeat = setInterval(onHeartbeat, 1000)
 
@@ -178,6 +181,15 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
   }
 
   /**
+   * Initializes the TTS interface.
+   */
+  async function initTTS() {
+    const configTTS = pickTTSConfig(state.config)
+    const chatTTS = await createChatTTS(state.obsClient, state.eventInterface, {...configTTS, pathFFMPEG, pathSay})
+    state.streamTools.chatTTS = chatTTS
+  }
+
+  /**
    * Initializes the Twitch API.
    */
   async function initTwitch() {
@@ -224,16 +236,20 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     
     await chatClient.connect()
 
-    /** Helper function for sending feedback after a redemption. */
-    chatClient._sayFeedback = (feedbackItems, channelID = null) => {
-      // The channel is returned as an ID. Convert it to the channel name.
-      // TODO: resolve using: <https://twurple.js.org/reference/api/classes/HelixUserApi.html#getUserById>
-      const channel = config.channels[channelID ?? config.default_channel]
-      feedbackItems.forEach(item => chatClient.say(channel, item))
-    }
-
     state.chatAuthProvider = authProvider
     state.chatClient = chatClient
+  }
+
+  /**
+   * Creates the event interface, which contains our high level code for API interaction.
+   */
+  async function initInterface() {
+    const eventInterface = await createEventInterface({
+      chatClient: state.chatClient,
+      apiClient: state.apiClient,
+      config: state.config
+    })
+    state.eventInterface = eventInterface
   }
 
   /**
@@ -287,6 +303,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     // Run any command triggers that might exist in the message.
     const actionContext = {
       chatClient: state.chatClient,
+      eventInterface: state.eventInterface,
       apiClient: state.apiClient,
       config: state.config,
       dataPath: state.dataPath,

@@ -24,7 +24,7 @@ const {pickTTSConfig} = require('./config')
  * Each message has its guid registered in the queue so that it's only uttered once.
  * Queue items are removed after a minute passes (purely for memory reasons).
  */
-const createChatTTS = async (obsClient, chatClient, options) => {
+const createChatTTS = async (obsClient, eventInterface, options) => {
   const state = {
     isListening: false,
     isChatTTSMode: false,
@@ -33,7 +33,7 @@ const createChatTTS = async (obsClient, chatClient, options) => {
     messageQueue: {},
     gcInterval: null,
     obsClient,
-    chatClient
+    eventInterface
   }
 
   /**
@@ -100,7 +100,7 @@ const createChatTTS = async (obsClient, chatClient, options) => {
         log`Could not generate TTS message:`
         log(message?.data)
         log(err)
-        state.chatClient._sayFeedback([`!Could not generate TTS message! Sorry, try again later? Error ID: "${message?.data?.id ?? '(none)'}".`])
+        state.eventInterface.postFeedbackItems([`!Could not generate TTS message! Sorry, try again later? Error ID: "${message?.data?.id ?? '(none)'}".`])
       }
     })
   }
