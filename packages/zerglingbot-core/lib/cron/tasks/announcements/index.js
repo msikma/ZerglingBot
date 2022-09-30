@@ -17,10 +17,9 @@ const runTaskAnnouncements = ({eventInterface, taskConfig}) => async (log) => {
   // On first run, create the task queue and add our messages.
   if (state.queue === null) {
     state.queue = createTaskQueue()
-    const messages = await eventInterface.getChatAnnouncements()
-    const tasks = messages
-      .filter(message => message.isEnabled)
-      .map(message => ({data: message, delay: message.delay}))
+    const messages = (await eventInterface.getChatAnnouncements()).filter(message => message.isEnabled)
+    const tasks = messages.map(message => ({data: message, delay: message.delay}))
+    log(`Queued ${tasks.length} announcements`)
     state.queue.addTasks(tasks)
   }
 

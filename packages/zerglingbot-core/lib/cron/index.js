@@ -72,7 +72,7 @@ const startCronTask = (name, task, state, time) => {
   }
 
   loop()
-  logger.log(`Task started.`)
+  logger.log(`Task started`)
 
   cronState.tasks[name] = taskState
 }
