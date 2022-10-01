@@ -21,6 +21,22 @@ const createEventInterface = async ({chatClient, apiClient, discordClient, confi
   state.botUser = await apiClient.users.getUserByName(state.botUsername)
 
   /**
+   * Creates a win/lose prediction for a StarCraft match.
+   * 
+   * See <https://twurple.js.org/reference/api/classes/HelixPredictionApi.html#createPrediction>.
+   */
+  state.makeWinLosePrediction = async () => {
+
+    //const b = await apiClient.predictions.getPredictions(state.broadcasterUser.id)
+    const pred = await apiClient.predictions.createPrediction(state.broadcasterUser.id, {
+      autoLockAfter: 10,
+      outcomes: ['Win', 'Lose'],
+      title: 'Win/lose prediction'
+    })
+    console.log('PRED', pred)
+  }
+
+  /**
    * Retrieves chat announcements from Discord.
    * 
    * On Discord, in the #stream-announcements channel (or whatever channel configured),

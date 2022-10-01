@@ -27,14 +27,18 @@
     "fast-glob": "^3.2.11",
     "format-duration": "^2.0.0",
     "iconv-lite": "^0.6.3",
+    "lodash.get": "^4.4.2",
     "lodash.isequal": "^4.5.0",
     "lodash.kebabcase": "^4.1.1",
+    "markdown-escape": "^1.1.0",
     "mersenne-twister": "^1.1.0",
     "node-fetch": "^2.6.7",
     "obs-websocket-js": "^4.0.3",
     "proper-lockfile": "^4.1.2",
     "psaux": "^0.4.0",
     "rmfr": "^2.0.0",
+    "standard-slugify": "^3.1.1",
+    "strip-ansi": "^6.0.0",
     "tempy": "^1.0.1"
   }
 }

@@ -63,9 +63,7 @@ const startCronTask = (name, task, state, time) => {
         }
         if (!taskState.hasErrored) {
           taskState.hasErrored = true
-          logger.logError(`Error in task:`)
-          logger.logError(err)
-          logger.logError(`Further errors will be silenced until the task executes successfully again.`)
+          logger.logError(`Error in task:`, err, `Further errors will be silenced until the task executes successfully again.`)
         }
       }
     }

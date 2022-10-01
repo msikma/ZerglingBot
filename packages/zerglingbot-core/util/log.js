@@ -3,56 +3,91 @@
 
 const chalk = require('chalk')
 const chalkTemplate = require('chalk-template')
-
+const stripAnsi = require('strip-ansi')
 const {getDateForLogger} = require('./time')
-const {isString, isTemplateLiteral} = require('./types')
+const {isString, isPlainObject, isTemplateLiteral} = require('./types')
 const {progKill} = require('./program')
 const {inspectObject, defaultOptions} = require('./inspect')
 
-/** Logger state. */
+/** Global logger state. */
 const state = {
-  includeDates: false
+  includeDates: false,
+  externalLoggers: {}
+}
+
+/**
+ * Adds a color.
+ * 
+ * Wrapper for Chalk color functions, to ensure they do not run if logging externally.
+ */
+const addColor = (colorName, levelName = null) => val => {
+  if (isPlainObject(val)) {
+    return {...val, colorName, levelName}
+  }
+  return chalk[colorName](val)
+}
+
+/**
+ * Adds an external logger.
+ * 
+ * This is primarily used to pipe log content to a Discord channel.
+ * External loggers get an object of log information containing at least a 'message' string value.
+ */
+const addExternalLogger = (logger, type) => {
+  state.externalLoggers[type] = logger
 }
 
 /**
  * Sets whether dates should be included in log files.
  */
-const setDateInclusion = value => {
-  state.includeDates = value
+const setDateInclusion = val => {
+  state.includeDates = val
 }
 
 /**
  * Adds timestamps to each line of a log string.
  */
-const addTimestamps = str => {
+const addTimestamps = val => {
+  if (isPlainObject(val)) {
+    return {...val, hasTimestamp: true}
+  }
   const date = getDateForLogger(state.includeDates)
   const prefix = `${chalk.gray.dim('[')}${chalk.gray(date)}${chalk.gray.dim(']')}`
-  const lines = str.split('\n').map(l => `${prefix} ${l}`)
+  const lines = val.split('\n').map(l => `${prefix} ${l}`)
   return lines.join('\n')
 }
 
 /**
  * Adds a prefix.
  */
-const addPrefix = (name, subName, color, colorBright) => str => {
+const addPrefix = (name, subName, color, colorBright) => val => {
+  if (isPlainObject(val)) {
+    return {...val, prefix: {name, subName}}
+  }
   const prefix = `${color.dim('[')}${color(name)}${subName ? ` ${colorBright(subName)}` : ''}${color.dim(']')}`
-  const lines = str.split('\n').map(l => `${prefix} ${l}`)
+  const lines = val.split('\n').map(l => `${prefix} ${l}`)
   return lines.join('\n')
 }
 
 /**
  * Adds a > (greater than) sign to each line.
  */
-const addQuotes = str => {
-  const lines = str.split('\n').map(l => `${chalk.gray('>')} ${l}`)
+const addQuotes = val => {
+  if (isPlainObject(val)) {
+    return {...val, hasQuotes: true}
+  }
+  const lines = val.split('\n').map(l => `${chalk.gray('>')} ${l}`)
   return lines.join('\n')
 }
 
 /**
- * Adds a > (greater than) sign to each line.
+ * Adds a > (greater than) sign to a single line.
  */
-const addSingleQuote = str => {
-  return `${chalk.gray('>')} ${str}`
+const addSingleQuote = type => val => {
+  if (isPlainObject(val)) {
+    return {...val, hasQuotes: true}
+  }
+  return `${chalk.gray('>')} ${val}`
 }
 
 /**
@@ -85,6 +120,14 @@ const logSegments = (segments, callerOptions = {}) => {
       const space = (n !== segments.length - 1 && !String(segments[n]).endsWith('\n') ? ' ' : '')
       return `${isString(obj) ? obj : inspectObject(obj)}${space}`
     }).join('')
+  }
+
+  // Pass log content to external loggers first.
+  // The only thing we do in terms of processing is resolving template literals.
+  for (const [type, logger] of Object.entries(state.externalLoggers)) {
+    const msgSegments = isTemplateLiteral(segments) ? [stripAnsi(chalkTemplate(...segments))] : segments
+    const logObj = mapFns.reduce((obj, fn) => fn(obj), {message: msgSegments})
+    logger.log(logObj, type)
   }
 
   // Pass the result through any post-processing functions we may have, then pass it to the log function.
@@ -131,9 +174,9 @@ function makeLogger(localOpts = {}) {
 function makeToolLogger(name, subName = null, color = 'yellow') {
   const addToolPrefix = addPrefix(name, subName, chalk[color], chalk[`${color}Bright`])
   const log = makeLogger({mapFns: [addToolPrefix, addTimestamps]})
-  const logInfo = makeLogger({mapFns: [addToolPrefix, addTimestamps, chalk.cyan]})
-  const logWarn = makeLogger({mapFns: [addToolPrefix, addTimestamps, chalk.yellow]})
-  const logError = makeLogger({mapFns: [addToolPrefix, addTimestamps, chalk.red], logFn: console.error})
+  const logInfo = makeLogger({mapFns: [addToolPrefix, addTimestamps, addColor('cyan', 'info')]})
+  const logWarn = makeLogger({mapFns: [addToolPrefix, addTimestamps, addColor('yellow', 'warn')]})
+  const logError = makeLogger({mapFns: [addToolPrefix, addTimestamps, addColor('red', 'error')], logFn: console.error})
   return {
     log,
     logInfo,
@@ -144,15 +187,15 @@ function makeToolLogger(name, subName = null, color = 'yellow') {
 
 /** All basic logging functions. */
 const log = makeLogger({mapFns: [addTimestamps]})
-const logInfo = makeLogger({mapFns: [addTimestamps, chalk.cyan]})
-const logWarn = makeLogger({mapFns: [addTimestamps, chalk.yellow]})
-const logError = makeLogger({mapFns: [addTimestamps, chalk.red], logFn: console.error})
+const logInfo = makeLogger({mapFns: [addTimestamps, addColor('cyan', 'info')]})
+const logWarn = makeLogger({mapFns: [addTimestamps, addColor('yellow', 'warn')]})
+const logError = makeLogger({mapFns: [addTimestamps, addColor('red', 'error')], logFn: console.error})
 const logFormat = chalkTemplate
 const inspect = makeLogger({logFn: null})
 
 /** Exits the program with an error; works like log() otherwise. */
 const die = makeLogger({
-  mapFns: [addTimestamps, chalk.red],
+  mapFns: [addTimestamps, addColor('red', 'error')],
   logFn: string => {
     console.error(string)
     progKill(1)
@@ -171,5 +214,6 @@ module.exports = {
   addTimestamps,
   addQuotes,
   addSingleQuote,
-  makeToolLogger
+  makeToolLogger,
+  addExternalLogger
 }

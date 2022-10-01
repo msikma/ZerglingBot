@@ -13,8 +13,10 @@ const {unpackMeta} = require('./lib/chat')
 const {createChatTTS, pickTTSConfig} = require('./lib/tts')
 const {createCronManager} = require('./lib/cron')
 const {openObsWebsocket} = require('./lib/obs')
+const {createDiscordLogger} = require('./lib/discord')
 const {getProgramLock} = require('./util/lock')
-const {log, logInfo, logWarn, makeToolLogger, setDateInclusion} = require('./util/log')
+const {getProgramData} = require('./util/program')
+const {log, logInfo, logWarn, makeToolLogger, setDateInclusion, addExternalLogger} = require('./util/log')
 const {getConfig, getToken, storeToken} = require('./util/config')
 const {executeCommandTriggers, executeRedemptionTriggers, isRewardRedemption} = require('./util/actions')
 const {checkForRestart, removeRestartFile} = require('./util/restart')
@@ -31,26 +33,34 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
   const state = {
     // Reference to the OBS websocket client.
     obsClient: null,
-    // Reference to the Twitch chat client.
-    chatClient: null,
+
     // Reference to our primary interaction interface.
     eventInterface: null,
+
+    // Reference to the Twitch chat client.
+    chatClient: null,
     chatAuthProvider: null,
     chatState: {
       hasConnectedBefore: false
     },
+
     // Reference to the Twitch API client.
     apiClient: null,
     apiAuthProvider: null,
     apiData: {
       user: null
     },
+
     // Reference to the Discord API client.
     discordClient: null,
     discordData: {
       server: null,
       logChannel: null,
       logErrorChannel: null
+    },
+
+    // Data about the bot itself.
+    programData: {
     },
 
     // Special tools for the stream.
@@ -95,6 +105,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     // Set whether we need to include the date in log calls (when running as a daemon).
     setDateInclusion(includeDates)
 
+    state.programData = await getProgramData()
     state.config = await getConfig(pathConfig)
     state.configPath = pathConfig
     state.dataPath = path.join(pathConfig, 'data')
@@ -108,6 +119,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
 
     await initTwitch()
     await initDiscord()
+    await initLogger()
     await initChat()
     await initInterface()
     await initPubSub()
@@ -235,8 +247,8 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
       discordClient.once('ready', async () => {
         // Retrieve basic information about our environment.
         discordData.server = await discordClient.guilds.fetch(config.system.server)
-        discordData.logChannel = await discordClient.channels.fetch(config.system.log_channel)
-        discordData.logErrorChannel = await discordClient.channels.fetch(config.system.log_error_channel)
+        discordData.logChannel = await discordData.server.channels.fetch(config.system.log_channel)
+        discordData.logErrorChannel = await discordData.server.channels.fetch(config.system.log_error_channel)
         
         logInfo`Connected to Discord API as user {green ${discordClient.user.username}}#{yellow ${discordClient.user.discriminator}}`
 
@@ -245,6 +257,17 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
 
       await discordClient.login(config.credentials.token)
     })
+  }
+
+  /**
+   * Initializes the external logger.
+   * 
+   * This sends log content to Discord.
+   */
+  async function initLogger() {
+    const discordLogger = await createDiscordLogger(state.discordClient, state.discordData, state.config.discord, state.programData)
+    await discordLogger.logStartupMessage()
+    addExternalLogger(discordLogger, discordLogger.type)
   }
 
   /**

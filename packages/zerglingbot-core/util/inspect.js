@@ -8,6 +8,7 @@ const defaultOptions = {
   logDepth: 6,
   logMaxLength: null,
   logBreakLength: 120,
+  logStringLength: 250,
   logFn: console.log,
   mapFns: null,
   colorize: true
@@ -24,6 +25,7 @@ const inspectObject = (obj, callerOptions = {}) => {
     colors: opts.colorize,
     depth: opts.logDepth,
     maxArrayLength: opts.logMaxLength,
+    maxStringLength: opts.logStringLength,
     breakLength: opts.logBreakLength,
     ...opts
   })
