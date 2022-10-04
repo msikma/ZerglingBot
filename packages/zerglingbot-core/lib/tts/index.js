@@ -1,7 +1,7 @@
 // zerglingbot <https://github.com/msikma/zerglingbot>
 // © MIT license
 
-const {log} = require('../../util/log')
+const {log, logError} = require('../../util/log')
 const {utterMessage} = require('../voice')
 const {pickTTSConfig} = require('./config')
 
@@ -34,6 +34,13 @@ const createChatTTS = async (obsClient, eventInterface, options) => {
     gcInterval: null,
     obsClient,
     eventInterface
+  }
+
+  /**
+   * Broadcasts the TTS message with audio.
+   */
+  const broadcastTTSPayload = (messageAudioData) => {
+    return state.obsClient.send('BroadcastCustomMessage', {realm: 'tts_audio', data: messageAudioData})
   }
 
   /**
@@ -94,12 +101,10 @@ const createChatTTS = async (obsClient, eventInterface, options) => {
         log`Broadcasting TTS message: {green ${message.data.seed}}: {yellow ${message.data.text}} ({blue ${message.data.id}} {magenta ${voiceData.name}})`
 
         // Broadcast the same message back, but as tts_audio and with an audio buffer included.
-        await state.obsClient.send('BroadcastCustomMessage', {realm: 'tts_audio', data: messageAudioData})
+        await broadcastTTSPayload(messageAudioData)
       }
       catch (err) {
-        log`Could not generate TTS message:`
-        log(message?.data)
-        log(err)
+        logError(`Could not generate TTS message:`, message?.data, err)
         state.eventInterface.postFeedbackItems([`!Could not generate TTS message! Sorry, try again later? Error ID: "${message?.data?.id ?? '(none)'}".`])
       }
     })
