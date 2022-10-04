@@ -6,5 +6,6 @@ module.exports = {
   voiceTypesLocal: require('./local/voice-types'),
   voiceTypesRemote: require('./remote/voice-types'),
   ...require('./utter'),
+  ...require('./meta'),
   ...require('./voices')
 }

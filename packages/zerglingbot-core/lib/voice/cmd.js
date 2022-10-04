@@ -24,6 +24,19 @@ const getConversionCommand = (fnSrc, format, bitrate, binPath = 'ffmpeg') => {
 }
 
 /**
+ * Returns a command for obtaining metadata about an audio file.
+ */
+const getMetadataCommand = (fnSrc, binPath = 'ffprobe') => {
+  const cmd = workDir => {
+    return [
+      [binPath, `-show_format`, `-show_streams`, `-print_format`, `json`, path.join(workDir, `${fnSrc}`)],
+    ]
+  }
+
+  return [cmd]
+}
+
+/**
  * Returns a command for generating a .wav file of an utterance.
  */
 const getUtteranceCommand = (prompt, voice, binPath = 'say') => {
@@ -47,6 +60,7 @@ const getVoicesCommand = () => {
 }
 
 module.exports = {
+  getMetadataCommand,
   getVoicesCommand,
   getUtteranceCommand,
   getConversionCommand

@@ -40,7 +40,8 @@ const utterMessageRemote = async (message, seed, options) => {
       type: 'mp3',
       encoding: options.toBase64 ? 'base64' : 'binary',
       buffer: options.toBase64 ? buffer.toString('base64') : buffer
-    }
+    },
+    buffer
   ]
 }
 
@@ -59,7 +60,8 @@ const utterMessageLocal = async (message, seed, options) => {
       type: 'opus',
       encoding: options.toBase64 ? 'base64' : 'binary',
       buffer: options.toBase64 ? buffer.toString('base64') : buffer
-    }
+    },
+    buffer
   ]
 }
 

@@ -2,7 +2,7 @@
 // © MIT license
 
 const {log, logError} = require('../../util/log')
-const {utterMessage} = require('../voice')
+const {utterMessage, getUtteranceMetadata} = require('../voice')
 const {pickTTSConfig} = require('./config')
 
 /**
@@ -139,9 +139,12 @@ const createChatTTS = async (obsClient, eventInterface, options) => {
    * The audio buffer is generated based on the message text and seed.
    */
   const getAudioMessage = async (message, options) => {
-    // Generate the utterance as an Opus file buffer.
-    const {pathFFMPEG, pathSay} = options
-    return utterMessage(message.text, message.seed, {...options, binPaths: {pathFFMPEG, pathSay}, toBase64: true})
+    // Generate the utterance as an Opus or MP3 file buffer.
+    const {pathFFMPEG, pathFFProbe, pathSay} = options
+    const binPaths = {pathFFMPEG, pathFFProbe, pathSay}
+    const [voiceData, audioData, buffer] = await utterMessage(message.text, message.seed, {...options, binPaths, toBase64: true})
+    const meta = await getUtteranceMetadata(audioData, buffer, binPaths)
+    return [voiceData, {...audioData, meta}]
   }
 
   /**
