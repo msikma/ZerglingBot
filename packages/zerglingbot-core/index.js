@@ -207,6 +207,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
   async function initTTS() {
     const configTTS = pickTTSConfig(state.config)
     const chatTTS = await createChatTTS(state.obsClient, state.eventInterface, {...configTTS, pathFFMPEG, pathSay})
+    chatTTS.setUserBlocklist([state.config.app.bot_username])
     state.streamTools.chatTTS = chatTTS
   }
 

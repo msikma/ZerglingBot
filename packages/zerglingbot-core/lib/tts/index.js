@@ -29,7 +29,7 @@ const createChatTTS = async (obsClient, eventInterface, options) => {
     isListening: false,
     isChatTTSMode: false,
     ignoreQueue: false,
-    blacklistedUsers: ['ZerglingBot_'],
+    blacklistedUsers: [],
     messageQueue: {},
     gcInterval: null,
     obsClient,
@@ -180,12 +180,18 @@ const createChatTTS = async (obsClient, eventInterface, options) => {
     return state.isChatTTSMode
   }
 
+  /** Sets the blocklist (which should include the bot). */
+  const setUserBlocklist = (list) => {
+    state.blacklistedUsers = list
+  }
+
   listenForSourceMessages()
   startQueueGc()
 
   return {
     getAudioMessage,
     toggleTTSMode,
+    setUserBlocklist,
     isInTTSMode
   }
 }
