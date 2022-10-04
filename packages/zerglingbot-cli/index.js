@@ -20,7 +20,8 @@ const main = async () => {
   cliParser.addArgument(['--cfg-path'], {help: 'Path to the config base directory.', metavar: 'PATH', dest: 'pathConfig', defaultValue: `${os.homedir()}/.config/zerglingbot/`})
   cliParser.addArgument(['--log-dates'], {help: 'Includes dates in the logger (for cron).', dest: 'includeDates', action: 'storeTrue'})
   cliParser.addArgument(['--restart'], {help: 'Request the active instance to exit.', dest: 'requestRestart', action: 'storeTrue'})
-  
+  cliParser.addArgument(['--no-logging'], {help: 'Skips remote logging to Discord.', dest: 'noRemoteLogging', action: 'storeTrue'})
+
   cliParser.addArgument(['--path-ffmpeg'], {help: 'Path to the ffmpeg binary.', dest: 'pathFFMPEG', metavar: 'PATH', defaultValue: `/usr/local/bin/ffmpeg`})
   cliParser.addArgument(['--path-ffprobe'], {help: 'Path to the ffprobe binary.', dest: 'pathFFProbe', metavar: 'PATH', defaultValue: `/usr/local/bin/ffprobe`})
   cliParser.addArgument(['--path-say'], {help: 'Path to the say binary.', dest: 'pathSay', metavar: 'PATH', defaultValue: `/usr/bin/say`})

@@ -29,7 +29,7 @@ const cronTasks = require('./lib/cron/tasks')
  * 
  * Connects to the channel and starts listening for user input.
  */
-function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pathBnetdata, includeDates = false} = {}) {
+function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pathBnetdata, includeDates = false, noRemoteLogging = false} = {}) {
   const state = {
     // Reference to the OBS websocket client.
     obsClient: null,
@@ -266,6 +266,10 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
    * This sends log content to Discord.
    */
   async function initLogger() {
+    if (noRemoteLogging) {
+      // Don't log to Discord when testing locally (using --no-logging).
+      return
+    }
     const discordLogger = await createDiscordLogger(state.discordClient, state.discordData, state.config.discord, state.programData)
     await discordLogger.logStartupMessage()
     addExternalLogger(discordLogger, discordLogger.type)
