@@ -105,7 +105,7 @@ const createChatTTS = async (obsClient, eventInterface, options) => {
       }
       catch (err) {
         logError(`Could not generate TTS message:`, message?.data, err)
-        state.eventInterface.postFeedbackItems([`!Could not generate TTS message! Sorry, try again later? Error ID: "${message?.data?.id ?? '(none)'}".`])
+        state.eventInterface.postFeedbackItems([`Could not generate TTS message! Sorry, try again later? Error ID: "${message?.data?.id ?? '(none)'}".`], true)
       }
     })
   }

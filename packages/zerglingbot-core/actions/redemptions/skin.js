@@ -72,18 +72,18 @@ const getResultFeedback = (result, skinObj, searchTerm) => {
   if (result.amount != null) {
     // If there were no results, alert the user we're picking a random one instead.
     if (result.amount === 0) {
-      items.push(`Found 0 search results for "${searchTerm}". Picking a random skin instead: ${skinObj.name}.`)
+      items.push([`Found 0 search results for "${searchTerm}". Picking a random skin instead: ${skinObj.name}.`, false])
       hasSkinName = true
     }
     // If we found multiple results while searching for the user's search term,
     // alert the user how many results there were.
     else if (result.amount !== 1) {
-      items.push(`!Found ${result.amount} search result${result.amount !== 1 ? 's' : ''} for "${searchTerm}".`)
+      items.push([`Found ${result.amount} search result${result.amount !== 1 ? 's' : ''} for "${searchTerm}".`, true])
     }
   }
   
   if (!hasSkinName) {
-    items.push(`Changed Winamp skin to: ${skinObj.name}.`)
+    items.push([`Changed Winamp skin to: ${skinObj.name}.`, false])
   }
 
   return items
@@ -121,7 +121,9 @@ const skin = {
     const skinObj = await setRandomSkin(result.skin, basedir, file)
     const feedbackItems = getResultFeedback(result, skinObj, msg?.trim())
 
-    eventInterface.postFeedbackItems(feedbackItems, msgObject.channelId)
+    for (const item of feedbackItems) {
+      await eventInterface.postToChannelID(item[0], item[1])
+    }
 
     log`Updated Winamp skin to {blue ${skinObj.name}}`
   }

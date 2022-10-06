@@ -6,8 +6,8 @@ const discord = {
   triggers: ['discord'],
   takes: [],
   help: `Shows a link to the Discord server.`,
-  action: async ({chatClient, target}, args, actionConfig) => {
-    return chatClient.say(target, `!Join us on Discord: ${actionConfig.invite_link}`)
+  action: async ({eventInterface, target}, args, actionConfig) => {
+    return eventInterface.postToChannelID(`Join us on Discord: ${actionConfig.invite_link}`, true)
   }
 }
 

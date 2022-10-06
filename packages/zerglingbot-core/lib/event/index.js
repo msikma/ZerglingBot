@@ -4,6 +4,9 @@
 const {getRandomFromArray} = require('../../util/prng')
 const {logWarn} = require('../../util/log')
 
+// Combining Grapheme Joiner (CGJ) (U+034F)
+const invisiblePrefix = '\u034F'
+
 /**
  * Creates the stream event interface.
  * 
@@ -117,14 +120,14 @@ const createEventInterface = async ({chatClient, apiClient, discordClient, confi
     // The channel is returned as an ID. Convert it to the channel name.
     // TODO: resolve using: <https://twurple.js.org/reference/api/classes/HelixUserApi.html#getUserById>
     const channel = config.chat.channels[channelID ?? config.chat.default_channel]
-    return chatClient.say(channel, `${quiet ? '!' : ''}${message}`)
+    return chatClient.say(channel, `${quiet ? `${invisiblePrefix}` : ''}${message}`)
   }
 
   /**
    * Posts feedback lines to the default channel chat.
    */
-  state.postFeedbackItems = (feedbackItems, channelID = null) => {
-    return Promise.all(feedbackItems.map(item => state.postToChannelID(item, false, channelID)))
+  state.postFeedbackItems = (feedbackItems, quiet = false, channelID = null) => {
+    return Promise.all(feedbackItems.map(item => state.postToChannelID(item, quiet, channelID)))
   }
 
   return state

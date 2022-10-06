@@ -52,23 +52,24 @@ const help = {
   help: 'Displays a list of commands, or more info about a specific command.',
   isSystemCommand: true,
   isHidden: false,
-  action: async ({chatClient, target, config}, args, actionConfig, commands) => {
+  action: async ({eventInterface, target, config}, args, actionConfig, commands) => {
     const cmdName = getUserCommand(args.commandName)
 
     if (!cmdName) {
       // Display a list of all commands.
       const usableCommands = Object.values(commands).filter(cmd => cmd.isHidden !== true)
       const commandsString = usableCommands.map(cmd => getUsage(cmd)).join(', ')
-      return chatClient.say(target, `!Available commands: ${commandsString}`)
+
+      return eventInterface.postToChannelID(`Available commands: ${commandsString}`, true)
     }
     else {
       // Display info about a specific command.
       const command = commands[cmdName]
       if (!command) {
-        return chatClient.say(target, `!Command not found: "${cmdName}"`)
+        return eventInterface.postToChannelID(`Command not found: "${cmdName}"`, true)
       }
 
-      return chatClient.say(target, `${await getHelp(command, {config})}`)
+      return eventInterface.postToChannelID(`${await getHelp(command, {config})}`, true)
     }
   }
 }
