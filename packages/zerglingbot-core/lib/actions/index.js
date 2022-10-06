@@ -2,8 +2,8 @@
 // © MIT license
 
 const escapeRegex = require('escape-string-regexp')
-const {unpackRedemptionData} = require('../lib/pubsub')
-const {log} = require('./log')
+const {unpackRedemptionData} = require('../pubsub')
+const {log} = require('../../util/log')
 
 /**
  * Executes any relevant command triggers for a given incoming message.
