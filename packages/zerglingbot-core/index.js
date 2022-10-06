@@ -288,7 +288,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     await pubSubClient.onRedemption(userListener, msg => {
       const {userName, userId, rewardTitle, message, rewardCost} = msg
       log`User {green ${userName}}#{yellow ${userId}} has redeemed {blue ${rewardTitle}}${message ? ': ' : ''}{red ${message ?? ''}} for {green ${rewardCost}} points`
-      const [hasRedemption, id, redemption] = executeRedemptionTriggers(msg, triggerRedemptions, {chatClient: state.chatClient, apiClient: state.apiClient}, state.config?.actions ?? {})
+      const [hasRedemption, id, redemption] = executeRedemptionTriggers(msg, triggerRedemptions, getActionContext(), state.config?.actions ?? {})
     })
   }
 
@@ -349,6 +349,20 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
   }
 
   /**
+   * Returns items for use in chat actions and redemptions.
+   */
+  function getActionContext() {
+    return {
+      chatClient: state.chatClient,
+      discordClient: state.discordClient,
+      eventInterface: state.eventInterface,
+      apiClient: state.apiClient,
+      config: state.config,
+      dataPath: state.dataPath
+    }
+  }
+
+  /**
    * Handler for new incoming chat messages.
    * 
    * Takes the following information about the message:
@@ -374,12 +388,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     
     // Run any command triggers that might exist in the message.
     const actionContext = {
-      chatClient: state.chatClient,
-      discordClient: state.discordClient,
-      eventInterface: state.eventInterface,
-      apiClient: state.apiClient,
-      config: state.config,
-      dataPath: state.dataPath,
+      ...getActionContext(),
       target,
       context: meta
     }
