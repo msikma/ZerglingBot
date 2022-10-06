@@ -2,6 +2,7 @@
 // © MIT license
 
 const kebabCase = require('lodash.kebabcase')
+const {isFunction} = require('../../../util/types')
 
 /**
  * Returns a usage information string for a given command object.
@@ -18,13 +19,23 @@ const getUsage = cmd => {
 }
 
 /**
+ * Converts an action's help item to a string.
+ */
+const getHelpString = (helpItem, context) => {
+  if (isFunction(helpItem)) {
+    return helpItem(context)
+  }
+  return helpItem.toString()
+}
+
+/**
  * Returns a help string for a specific command.
  */
-const getHelp = cmd => {
+const getHelp = async (cmd, context) => {
   const usage = getUsage(cmd)
   const help = cmd.help
 
-  return `${usage}: ${help}`
+  return `${usage}: ${await getHelpString(help, context)}`
 }
 
 /**
@@ -41,7 +52,7 @@ const help = {
   help: 'Displays a list of commands, or more info about a specific command.',
   isSystemCommand: true,
   isHidden: false,
-  action: ({chatClient, target}, args, actionConfig, commands) => {
+  action: async ({chatClient, target, config}, args, actionConfig, commands) => {
     const cmdName = getUserCommand(args.commandName)
 
     if (!cmdName) {
@@ -57,7 +68,7 @@ const help = {
         return chatClient.say(target, `!Command not found: "${cmdName}"`)
       }
 
-      return chatClient.say(target, `${getHelp(command)}`)
+      return chatClient.say(target, `${await getHelp(command, {config})}`)
     }
   }
 }

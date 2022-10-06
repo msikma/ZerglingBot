@@ -90,6 +90,14 @@ const getResultFeedback = (result, skinObj, searchTerm) => {
 }
 
 /**
+ * Returns the number of skins in the database.
+ */
+const getNumberOfSkins = async (basedir) => {
+  const pool = await getSkinPool({}, basedir)
+  return pool.length
+}
+
+/**
  * Redemption for changing the Winamp skin.
  * 
  * This gets called for both the random redemption and the search term redemption.
@@ -102,7 +110,7 @@ const skin = {
     // Pick Winamp Skin
     '596fc4ce-c6bf-4cd2-841e-29e73681d777': 'pickWinampSkin'
   },
-  help: `Changes the current Winamp skin.`,
+  help: async ({config}) => `Changes the current Winamp skin. Number of skins in the database: ${await getNumberOfSkins(config.skin_base_dir)}.`,
   action: async ({apiClient, eventInterface}, type, msg, config, msgObject) => {
     // Base directory in which we keep skins.
     const basedir = config.skin_base_dir
