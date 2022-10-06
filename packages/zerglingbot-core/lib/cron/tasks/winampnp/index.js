@@ -45,7 +45,7 @@ const runTaskWinampNP = ({dataPath, taskConfig, paths}) => async (log) => {
 }
 
 module.exports = {
-  taskLadderInfo: {
+  taskWinampNP: {
     name: 'winampnp',
     task: runTaskWinampNP,
     delay: 250
