@@ -85,7 +85,7 @@ const mergeRankData = async (filepath, allData, newData, fnCheck, fnUpdated) => 
   const newValue = fnCheck(newData)
   const oldValue = fnCheck(latestOldData)
 
-  if (latestUpdated != null && (newUpdated === latestUpdated || newValue === oldValue)) {
+  if ((newUpdated == null) || (latestUpdated != null && (newUpdated === latestUpdated || newValue === oldValue))) {
     return
   }
 

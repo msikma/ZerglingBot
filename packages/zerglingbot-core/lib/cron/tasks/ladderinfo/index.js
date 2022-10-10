@@ -3,33 +3,65 @@
 
 const fs = require('fs').promises
 const path = require('path')
+const {logError} = require('../../../../util/log')
 const {getPlayerData} = require('./data')
 const {writeHistoryFiles} = require('./history')
+const {setRankWidgetVisibility} = require('../../../obs')
 
 /** Task state. */
 const state = {
-  lastInfo: {}
+  lastInfo: {},
+  lastUpdate: null,
+  status: {},
+  player: {},
+  rank: {}
 }
 
 /** Writes the StarCraft status file. */
-const writeStatusFile = (filepath, isRunning) => {
-  return fs.writeFile(filepath, JSON.stringify({isRunning, lastUpdate: new Date()}, null, 2), 'utf8')
+const writeStatusFile = (filepath) => {
+  return fs.writeFile(filepath, JSON.stringify({...state.status, lastUpdate: state.lastUpdate}, null, 2), 'utf8')
 }
 
 /** Writes the player data file. */
-const writePlayerFile = (filepath, data) => {
-  return fs.writeFile(filepath, JSON.stringify({...data, lastUpdate: new Date()}, null, 2), 'utf8')
+const writePlayerFile = (filepath) => {
+  return fs.writeFile(filepath, JSON.stringify({...state.player, lastUpdate: state.lastUpdate}, null, 2), 'utf8')
 }
 
 /** Writes the rank data file. */
-const writeRankFile = (filepath, data) => {
-  return fs.writeFile(filepath, JSON.stringify({...data.rank, lastUpdate: new Date()}, null, 2), 'utf8')
+const writeRankFile = (filepath) => {
+  return fs.writeFile(filepath, JSON.stringify({...state.rank, lastUpdate: state.lastUpdate}, null, 2), 'utf8')
+}
+
+/** Saves data to the state; this data can be stored to a file directly. */
+const collectData = (success, data, isRunning) => {
+  const lastUpdate = new Date()
+
+  state.lastUpdate = lastUpdate
+  state.status = {isRunning}
+  if (data && success) {
+    state.player = {...data}
+    state.rank = {...data.rank}
+  }
+}
+
+/**
+ * Turns the StarCraft rank widget on or off depending on whether the game is running.
+ */
+const updateRankWidget = (obsClient, isRunning, log) => {
+  const wasRunning = state.status?.isRunning ?? null
+  if (wasRunning !== isRunning) {
+    log(`Toggled rank widget:`, isRunning)
+    return setRankWidgetVisibility(obsClient, isRunning)
+  }
 }
 
 /**
  * Retrieves information from the Starcraft API and stores it as JSON files.
  */
-const runTaskLadderInfo = ({dataPath, paths, taskConfig}) => async (log) => {
+const runTaskLadderInfo = ({dataPath, paths, taskConfig, obsClient}) => async (log) => {
+  if (!obsClient._connected) {
+    return
+  }
   // Several filenames containing various different pieces of information.
   const fileStatus = path.join(dataPath, 'sc_status.json')
   const filePlayer = path.join(dataPath, 'sc_user.json')
@@ -40,14 +72,26 @@ const runTaskLadderInfo = ({dataPath, paths, taskConfig}) => async (log) => {
 
   // Run bnetdata and retrieve the player's information.
   const res = await getPlayerData(taskConfig.player_id, [paths.pathNode, paths.pathBnetdata])
+  
+  // Switch the rank widget on/off depending on whether the game is running.
+  await updateRankWidget(obsClient, res.isRunning, log)
+
+  // Store all information to the current state.
+  collectData(res.success, res.data ?? {}, res.isRunning)
+  
+  // Write the status file (whether StarCraft is running).
+  await writeStatusFile(fileStatus)
 
   // Pass on the error if something went wrong somehow.
   if (!res.success) {
-    throw new Error(`${res.error}`.trim())
+    // If the player isn't on the ladder yet, just exit.
+    const message = res.error?.message ?? ''
+    const playerNotFound = message.includes('Player') && message.includes('not found')
+    if (playerNotFound) {
+      return
+    }
+    throw new Error(`${message}`.trim())
   }
-  
-  // Write the status file (whether StarCraft is running).
-  await writeStatusFile(fileStatus, res.isRunning)
 
   // If StarCraft is not running, just exit right after writing the status file.
   if (!res.isRunning) {
@@ -60,10 +104,10 @@ const runTaskLadderInfo = ({dataPath, paths, taskConfig}) => async (log) => {
   state.lastInfo = res.data
 
   // Write a file containing the full player info and one with just the rank info.
-  await writePlayerFile(filePlayer, res.data)
-  await writeRankFile(fileRank, res.data)
+  await writePlayerFile(filePlayer)
+  await writeRankFile(fileRank)
 
-  // Now write historic data files for recordkeeping.
+  // Write historic data files for recordkeeping.
   await writeHistoryFiles(pathHistory, res.data)
 }
 
