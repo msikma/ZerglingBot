@@ -121,10 +121,10 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     await initDiscord()
     await initLogger()
     await initChat()
+    await initOBS()
     await initInterface()
     await initPubSub()
     await initCronManager()
-    await initOBS()
     await initTTS()
 
     state.heartbeat = setInterval(onHeartbeat, 1000)
@@ -197,7 +197,7 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
   async function initOBS() {
     const obsCredentials = state.config.obs
     const obs = openObsWebsocket(obsCredentials.address, obsCredentials.password)
-    await obs.init()
+    obs.init()
     state.obsClient = obs.client
   }
 
@@ -317,8 +317,10 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
   async function initInterface() {
     const eventInterface = await createEventInterface({
       chatClient: state.chatClient,
+      obsClient: state.obsClient,
       discordClient: state.discordClient,
       apiClient: state.apiClient,
+      dataPath: state.dataPath,
       config: state.config
     })
     state.eventInterface = eventInterface
