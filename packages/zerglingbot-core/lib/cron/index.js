@@ -59,7 +59,7 @@ const startCronTask = (name, task, state, time) => {
       catch (err) {
         // Ignore temporary connection errors.
         if (err.code === 'NOT_CONNECTED') {
-          return
+          continue
         }
         if (!taskState.hasErrored) {
           taskState.hasErrored = true
