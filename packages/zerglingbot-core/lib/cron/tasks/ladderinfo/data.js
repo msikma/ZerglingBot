@@ -38,7 +38,6 @@ const getPlayerData = async (playerID, binPaths) => {
   // Attempt to parse both the stdout and the stderr.
   const dataOut = tryParse(data.stdout)
   const dataErr = tryParse(data.stderr)
-
   const isRunning = data.code !== STARCRAFT_NOT_RUNNING
 
   if (!isRunning) {
@@ -47,11 +46,11 @@ const getPlayerData = async (playerID, binPaths) => {
       isRunning
     }
   }
-  if (dataErr) {
+  if (dataErr || data.signal === 'SIGABRT') {
     return {
       success: false,
-      isRunning,
-      error: dataErr.error
+      isRunning: false,
+      error: dataErr?.error ?? data.signal
     }
   }
   return {
