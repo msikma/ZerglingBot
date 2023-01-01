@@ -3,6 +3,7 @@
 
 const escapeRegex = require('escape-string-regexp')
 const {unpackRedemptionData} = require('../pubsub')
+const {isFunction} = require('../../util/types')
 const {log} = require('../../util/log')
 
 /**
@@ -11,10 +12,10 @@ const {log} = require('../../util/log')
 const executeCommandTriggers = (text, recognizedCmds, context, actionConfig, cmdChar = '!') => {
   const [trigger, remainder] = getCommandTrigger(text, cmdChar)
 
-  const command = findCommand(trigger, recognizedCmds)
+  const command = findCommand(trigger, recognizedCmds, actionConfig)
   if (command) {
     log`Matched command trigger: {green ${command.name}} (trigger: {red ${cmdChar}${trigger}})`
-    command.action(context, sliceRemainder(command, remainder), actionConfig[command.name] ?? {}, recognizedCmds)
+    command.action(context, sliceRemainder(command, remainder), actionConfig[command.name] ?? {}, recognizedCmds, trigger)
   }
 
   return [trigger !== null, trigger, command]
@@ -84,11 +85,25 @@ const findRedemption = (reqID, recognizedRedemptions) => {
 }
 
 /**
+ * Returns all triggers for a specific command.
+ */
+const getCommandTriggerList = (triggers, userTrigger, actionConfig, getAllTriggers = false, getFirstOnly = false) => {
+  if (isFunction(triggers)) {
+    return triggers(userTrigger, actionConfig, getAllTriggers, getFirstOnly)
+  }
+  else {
+    return getFirstOnly ? [triggers[0]] : triggers
+  }
+}
+
+/**
  * Finds a trigger in the list of recognized commands.
  */
-const findCommand = (trigger, recognizedCmds) => {
+const findCommand = (trigger, recognizedCmds, actionConfig) => {
   for (const cmd of Object.values(recognizedCmds)) {
-    if (!cmd.triggers.includes(trigger)) {
+    // If this action takes a function to determine triggers, run it to get the list.
+    const triggers = getCommandTriggerList(cmd.triggers, trigger, actionConfig[cmd.name])
+    if (!triggers.includes(trigger)) {
       continue
     }
     return cmd
@@ -113,6 +128,7 @@ const isRewardRedemption = meta => {
 }
 
 module.exports = {
+  getCommandTriggerList,
   executeCommandTriggers,
   executeRedemptionTriggers,
   isRewardRedemption,

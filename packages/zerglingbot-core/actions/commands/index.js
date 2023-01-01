@@ -3,6 +3,6 @@
 
 module.exports = {
   ...require('./song'),
-  ...require('./discord'),
+  ...require('./reply'),
   ...require('./system/help'),
 }
