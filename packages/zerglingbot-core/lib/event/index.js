@@ -2,6 +2,7 @@
 // © MIT license
 
 const {createPredictionFileSync, unpackOutcomeData, unpackPredictionData} = require('./data')
+const {readChatterMetadata} = require('../data')
 const {setAsyncInterval} = require('../../util/async')
 const {getRandomFromArray} = require('../../util/prng')
 const {logWarn, logError} = require('../../util/log')
@@ -268,6 +269,30 @@ const createEventInterface = async ({chatClient, apiClient, obsClient, discordCl
   }
 
   /**
+   * Listens for requests to get the chatter metadata.
+   */
+  state._initChatterMetadataListener = async () => {
+    // Listen for requests to send the chatter metadata.
+    obsClient.addListener('BroadcastCustomMessage', async message => {
+      if (message.realm !== 'chatter_metadata') return
+      const req = message.data
+      if (req.action === 'requestData') {
+        state.broadcastChatterMetadata()
+      }
+    })
+  }
+
+  /**
+   * Broadcasts the chatter metadata to connected websocket clients.
+   * 
+   * This allows the chat to know which users need which race icons.
+   */
+  state.broadcastChatterMetadata = async () => {
+    const data = await readChatterMetadata(dataPath)
+    return obsClient.send('BroadcastCustomMessage', {realm: 'chatter_metadata', data: {action: 'sendData', payload: data}})
+  }
+
+  /**
    * Posts feedback lines to the default channel chat.
    * 
    * If 'quiet' is true, an exclamation point is prepended to make the line not show up on stream.
@@ -288,6 +313,8 @@ const createEventInterface = async ({chatClient, apiClient, obsClient, discordCl
 
   // Initialize the prediction worker.
   state._initPredictionSync()
+  // Initialize the listener for chatter metadata requests.
+  state._initChatterMetadataListener()
 
   return state
 }

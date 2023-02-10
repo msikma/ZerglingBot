@@ -2,6 +2,5 @@
 // © MIT license
 
 module.exports = {
-  ...require('./skin'),
-  ...require('./sc-race')
+  ...require('./metadata')
 }
