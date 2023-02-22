@@ -48,6 +48,9 @@ const collectData = (success, data, isRunning) => {
  * Turns the StarCraft rank widget on or off depending on whether the game is running.
  */
 const updateRankWidget = (obsClient, isRunning, log) => {
+  if (!obsClient._connected) {
+    return
+  }
   const wasRunning = state.status?.isRunning ?? null
   if (wasRunning !== isRunning) {
     log(`Toggled rank widget:`, isRunning)
@@ -59,9 +62,9 @@ const updateRankWidget = (obsClient, isRunning, log) => {
  * Retrieves information from the Starcraft API and stores it as JSON files.
  */
 const runTaskLadderInfo = ({dataPath, paths, taskConfig, obsClient}) => async (log) => {
-  if (!obsClient._connected) {
-    return
-  }
+  // TODO: make this configurable. Task always fails while starting/stopping SC.
+  const silentlyFail = true
+  
   // Several filenames containing various different pieces of information.
   const fileStatus = path.join(dataPath, 'sc_status.json')
   const filePlayer = path.join(dataPath, 'sc_user.json')
@@ -87,7 +90,7 @@ const runTaskLadderInfo = ({dataPath, paths, taskConfig, obsClient}) => async (l
     // If the player isn't on the ladder yet, just exit.
     const message = res.error?.message ?? ''
     const playerNotFound = message.includes('Player') && message.includes('not found')
-    if (playerNotFound) {
+    if (playerNotFound || silentlyFail) {
       return
     }
     throw new Error(`${message}`.trim())
@@ -102,6 +105,11 @@ const runTaskLadderInfo = ({dataPath, paths, taskConfig, obsClient}) => async (l
     log('MMR updated:', res.data.rank.points, `${res.data.rank.letter} rank (pos. ${res.data.rank.rank})`)
   }
   state.lastInfo = res.data
+
+  // Omit writing files if there was no data (e.g. when StarCraft was closing down during the call).
+  if (res.data === null) {
+    return
+  }
 
   // Write a file containing the full player info and one with just the rank info.
   await writePlayerFile(filePlayer)
