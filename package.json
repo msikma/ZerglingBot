@@ -4,6 +4,7 @@
   "description": "Bot for the Dada78641 Twitch stream",
   "main": "index.js",
   "private": true,
+  "type": "module",
   "workspaces": [
     "packages/*"
   ],
@@ -21,7 +22,7 @@
     "StarCraft"
   ],
   "bin": {
-    "zerglingbot.js": "./bin/zerglingbot.js"
+    "zerglingbot.js": "./bin/zerglingbot.mjs"
   },
   "homepage": "https://github.com/msikma/zerglingbot",
   "repository": "https://github.com/msikma/zerglingbot",

@@ -4,6 +4,7 @@
   "private": true,
   "description": "Twitch chat bot for the dada78641 channel",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "jest"
   },
@@ -12,7 +13,7 @@
   "author": "Michiel Sikma <michiel@sikma.org>",
   "license": "MIT",
   "dependencies": {
-    "argparse": "^1.0.10",
+    "argparse": "^2.0.1",
     "zerglingbot-core": "^0.1.0"
   }
 }
