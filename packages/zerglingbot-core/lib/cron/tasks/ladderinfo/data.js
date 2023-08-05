@@ -26,7 +26,7 @@ const tryParse = data => {
 const getPlayerData = async (playerID, binPaths) => {
   let data = {}
   try {
-    data = await exec([...binPaths, '--get-player', playerID, '--nfu'], 'utf8')
+    data = await exec([...binPaths, '--get-player', playerID, '--assume-unranked', '--omit-deleted'], 'utf8')
   }
   catch (err) {
     return {

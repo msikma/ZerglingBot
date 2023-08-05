@@ -12,8 +12,11 @@ const {setRankWidgetVisibility} = require('../../../obs')
 const state = {
   lastInfo: {},
   lastUpdate: null,
+  // sc_status.json
   status: {},
+  // sc_user.json
   player: {},
+  // sc_rank.json
   rank: {}
 }
 
@@ -62,7 +65,7 @@ const updateRankWidget = (obsClient, isRunning, log) => {
  * Retrieves information from the Starcraft API and stores it as JSON files.
  */
 const runTaskLadderInfo = ({dataPath, paths, taskConfig, obsClient}) => async (log) => {
-  // TODO: make this configurable. Task always fails while starting/stopping SC.
+  // TODO: make this configurable. Task always fails once while starting/stopping SC.
   const silentlyFail = true
   
   // Several filenames containing various different pieces of information.

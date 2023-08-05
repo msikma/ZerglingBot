@@ -94,6 +94,22 @@ const mergeRankData = async (filepath, allData, newData, fnCheck, fnUpdated) => 
 }
 
 /**
+ * Performs the actual merging and saving of data into new history files.
+ * 
+ * This is used to write both the monthly history files, and the yearly history files.
+ */
+const writeTimestampedHistoryFiles = async (fnBase, data) => {
+  const rankFn = `${fnBase}_rank.json`
+  const matchesFn = `${fnBase}_matches.json`
+
+  const rankData = filterRankData(data)
+  const matchData = filterMatchData(data)
+
+  await mergeRankData(rankFn, data, rankData, data => data?.points, data => data?.updated ? new Date(data.updated).toISOString() : null)
+  await mergeMatchesData(matchesFn, data, matchData)
+}
+
+/**
  * Writes historical data files for recordkeeping.
  */
 const writeHistoryFiles = async (pathHistory, data) => {
@@ -102,13 +118,14 @@ const writeHistoryFiles = async (pathHistory, data) => {
   const month = getMonth(date)
   
   const pathYear = path.join(pathHistory, year)
-  const fnBase = path.join(pathYear, month)
-  const rankFn = `${fnBase}_rank.json`
-  const matchesFn = `${fnBase}_matches.json`
+  // Monthly base name, e.g. 'sc_history/2023/02_'
+  const fnBaseMonth = path.join(pathYear, month)
+  // Yearly base name, e.g. 'sc_history/2023/2023_'
+  const fnBaseYear = path.join(pathYear, year)
 
   await ensureDir(pathYear)
-  await mergeRankData(rankFn, data, filterRankData(data), data => data?.points, data => data?.updated ? new Date(data.updated).toISOString() : null)
-  await mergeMatchesData(matchesFn, data, filterMatchData(data))
+  await writeTimestampedHistoryFiles(fnBaseMonth, data)
+  await writeTimestampedHistoryFiles(fnBaseYear, data)
 }
 
 module.exports = {
