@@ -96,8 +96,7 @@ typings/
 *~
 
 # macOS icons
-Icon
-
+Icon[^M]
 
 # Thumbnails
 ._*
