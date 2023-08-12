@@ -16,6 +16,7 @@ const {openObsWebsocket} = require('./lib/obs')
 const {createDiscordLogger} = require('./lib/discord')
 const {getProgramLock} = require('./util/lock')
 const {getProgramData} = require('./util/program')
+const {ensureDir} = require('./util/fs')
 const {executeCommandTriggers, executeRedemptionTriggers, isRewardRedemption} = require('./lib/actions')
 const {log, logInfo, logWarn, makeToolLogger, setDateInclusion, addExternalLogger} = require('./util/log')
 const {getConfig, getToken, storeToken} = require('./util/config')
@@ -29,7 +30,7 @@ const cronTasks = require('./lib/cron/tasks')
  * 
  * Connects to the channel and starts listening for user input.
  */
-function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pathBnetdata, includeDates = false, noRemoteLogging = false} = {}) {
+function ZerglingBot({pathConfig, pathCache, pathFFMPEG, pathFFProbe, pathSay, pathNode, includeDates = false, noRemoteLogging = false} = {}) {
   const state = {
     // Reference to the OBS websocket client.
     obsClient: null,
@@ -68,17 +69,17 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
       chatTTS: null
     },
 
-    // The contents of the config file.
+    // The config and cache files (in ~/.config/ and ~/.cache/).
     config: {},
     configPath: null,
+    cachePath: null,
 
     // Paths to command line tools.
     paths: {
       pathFFMPEG: null,
       pathFFProbe: null,
       pathSay: null,
-      pathNode: null,
-      pathBnetdata: null
+      pathNode: null
     },
 
     // Reference to the cron manager which handles periodic tasks.
@@ -100,20 +101,20 @@ function ZerglingBot({pathConfig, pathFFMPEG, pathFFProbe, pathSay, pathNode, pa
     }
     
     // Ensure only one instance is running.
-    await getProgramLock(pathConfig)
+    await getProgramLock(pathCache)
 
     // Set whether we need to include the date in log calls (when running as a daemon).
     setDateInclusion(includeDates)
 
     state.programData = await getProgramData()
     state.config = await getConfig(pathConfig)
-    state.configPath = pathConfig
-    state.dataPath = path.join(pathConfig, 'data')
+    state.configPath = await ensureDir(pathConfig)
+    state.cachePath = await ensureDir(pathCache)
+    state.dataPath = await ensureDir(path.join(pathCache, 'data'))
     state.paths.pathFFMPEG = pathFFMPEG
     state.paths.pathFFProbe = pathFFProbe
     state.paths.pathSay = pathSay
     state.paths.pathNode = pathNode
-    state.paths.pathBnetdata = pathBnetdata
 
     logInfo`Starting ZerglingBot`
 

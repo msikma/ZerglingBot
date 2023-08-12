@@ -3,10 +3,8 @@
 
 const fs = require('fs').promises
 const path = require('path')
-const {logError} = require('../../../../util/log')
-const {getPlayerData} = require('./data')
+const {getPlayerData, collectRankData} = require('./data')
 const {writeHistoryFiles} = require('./history')
-const {setRankWidgetVisibility} = require('../../../obs')
 
 /** Task state. */
 const state = {
@@ -43,21 +41,7 @@ const collectData = (success, data, isRunning) => {
   state.status = {isRunning}
   if (data && success) {
     state.player = {...data}
-    state.rank = {...data.rank}
-  }
-}
-
-/**
- * Turns the StarCraft rank widget on or off depending on whether the game is running.
- */
-const updateRankWidget = (obsClient, isRunning, log) => {
-  if (!obsClient._connected) {
-    return
-  }
-  const wasRunning = state.status?.isRunning ?? null
-  if (wasRunning !== isRunning) {
-    log(`Toggled rank widget:`, isRunning)
-    return setRankWidgetVisibility(obsClient, isRunning)
+    state.rank = collectRankData(data)
   }
 }
 
@@ -77,10 +61,7 @@ const runTaskLadderInfo = ({dataPath, paths, taskConfig, obsClient}) => async (l
   const pathHistory = path.join(dataPath, 'sc_history')
 
   // Run bnetdata and retrieve the player's information.
-  const res = await getPlayerData(taskConfig.player_id, [paths.pathNode, paths.pathBnetdata])
-  
-  // Switch the rank widget on/off depending on whether the game is running.
-  await updateRankWidget(obsClient, res.isRunning, log)
+  const res = await getPlayerData(taskConfig.player_id, taskConfig.player_region)
 
   // Store all information to the current state.
   collectData(res.success, res.data ?? {}, res.isRunning)
@@ -90,10 +71,8 @@ const runTaskLadderInfo = ({dataPath, paths, taskConfig, obsClient}) => async (l
 
   // Pass on the error if something went wrong somehow.
   if (!res.success) {
-    // If the player isn't on the ladder yet, just exit.
-    const message = res.error?.message ?? ''
-    const playerNotFound = message.includes('Player') && message.includes('not found')
-    if (playerNotFound || silentlyFail) {
+    // TODO
+    if (silentlyFail) {
       return
     }
     throw new Error(`${message}`.trim())
@@ -104,8 +83,8 @@ const runTaskLadderInfo = ({dataPath, paths, taskConfig, obsClient}) => async (l
     return
   }
 
-  if (state.lastInfo?.rank?.points !== res.data?.rank?.points) {
-    log('MMR updated:', res.data.rank.points, `${res.data.rank.letter} rank (pos. ${res.data.rank.rank})`)
+  if (state.lastInfo?.rank?.rankMmr !== res.data?.rank?.rankMmr) {
+    log('MMR updated:', res.data.rank.rankMmr, `${res.data.rank.rankTier} rank (pos. ${res.data.rank.leaderboardRank})`)
   }
   state.lastInfo = res.data
 

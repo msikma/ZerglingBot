@@ -1,65 +1,71 @@
 // zerglingbot <https://github.com/msikma/zerglingbot>
 // © MIT license
 
-const {exec} = require('../../../../util/exec')
+const pick = require('lodash.pick')
 
-/** Exit code returned if StarCraft is not running. */
-const STARCRAFT_NOT_RUNNING = 18
+// TODO: regular import.
+let BwRank = null
 
-/**
- * Attempts to parse JSON data from a string, and returns null if it fails.
- */
-const tryParse = data => {
-  try {
-    return JSON.parse(data)
-  }
-  catch (err) {
-    return null
+/** Returns a zero-padded month for a date string or object. */
+const getMonth = date => String(new Date(date).getUTCMonth() + 1).padStart(2, '0')
+
+/** Collects the data relevant for the rank file. */
+const collectRankData = (data) => {
+  const profile = data.profiles[data.activeProfile]
+  return {
+    ...pick(data, ['auroraId', 'battleTag', 'countryCode']),
+    ...pick(profile, ['toon', 'toonGatewayRegion', 'rankTier', 'rankMmr', 'lastActivity', 'gameWins', 'gameLosses', 'gameDisconnects', 'leaderboardId', 'leaderboardRank'])
   }
 }
 
 /**
- * Runs bnetdata and returns an object with the results.
+ * Returns match data from a player data response.
+ */
+const collectMatchData = (data, date = new Date()) => {
+  const profile = data.profiles[data.activeProfile]
+  const currentMonth = getMonth(date)
+  const monthMatches = profile.latestMatches.filter(match => getMonth(match.matchTimestamp) === currentMonth)
+  return Object.fromEntries(monthMatches.map(match => [new Date(match.matchTimestamp).toISOString(), match]))
+}
+
+/**
+ * Runs bwdata and returns an object with the results.
  * 
  * If StarCraft is not running, this fails silently with 'isRunning' set to false.
  */
-const getPlayerData = async (playerID, binPaths) => {
-  let data = {}
+const getPlayerData = async (playerID, playerRegion) => {
+  if (BwRank == null) {
+    BwRank = (await import('bwrank')).default
+  }
   try {
-    data = await exec([...binPaths, '--get-player', playerID, '--assume-unranked', '--omit-deleted'], 'utf8')
-  }
-  catch (err) {
-    return {
-      success: false,
-      error: data.stderr
-    }
-  }
-
-  // Attempt to parse both the stdout and the stderr.
-  const dataOut = tryParse(data.stdout)
-  const dataErr = tryParse(data.stderr)
-  const isRunning = data.code !== STARCRAFT_NOT_RUNNING
-
-  if (!isRunning) {
+    const bwRank = await BwRank()
+    const data = await bwRank.getPlayerProfiles(playerID, playerRegion)
     return {
       success: true,
-      isRunning
+      isRunning: true,
+      data
     }
   }
-  if (dataErr || data.signal === 'SIGABRT') {
-    return {
-      success: false,
-      isRunning: false,
-      error: dataErr?.error ?? data.signal
+  catch (err) {
+    if (err === 'not_running') {
+      return {
+        success: true,
+        isRunning: false
+      }
     }
-  }
-  return {
-    success: true,
-    isRunning,
-    data: dataOut
+    else {
+      return {
+        success: false,
+        isRunning: false,
+        error: String(err)
+      }
+    }
   }
 }
 
 module.exports = {
+  collectRankData,
+  collectMatchData,
+  getMonth,
   getPlayerData
 }

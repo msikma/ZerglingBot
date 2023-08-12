@@ -11,10 +11,10 @@ const lockOptions = {
 }
 
 /**
- * Obtains a lock for the program based on the location of the config file.
+ * Obtains a lock for the program based on the location of the cache file.
  */
-const getProgramLock = async (pathConfig) => {
-  return lockDirectory(pathConfig)
+const getProgramLock = async (pathCache) => {
+  return lockDirectory(pathCache)
 }
 
 /**

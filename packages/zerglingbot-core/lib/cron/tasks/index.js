@@ -5,7 +5,7 @@ module.exports = {
   ...require('./announcements'),
   ...require('./dosbox'),
   ...require('./streaminfo'),
-  //...require('./ladderinfo'),
+  ...require('./ladderinfo'),
   ...require('./winampnp'),
   ...require('./webcam')
 }

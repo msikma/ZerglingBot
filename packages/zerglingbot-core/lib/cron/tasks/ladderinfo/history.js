@@ -4,10 +4,8 @@
 const fs = require('fs').promises
 const path = require('path')
 const isEqual = require('lodash.isequal')
+const {collectRankData, collectMatchData, getMonth} = require('./data')
 const {ensureDir} = require('../../../../util/fs')
-
-/** Returns a zero-padded month for a date string or object. */
-const getMonth = date => String(new Date(date).getUTCMonth() + 1).padStart(2, '0')
 
 /**
  * Retrieves previously saved data.
@@ -24,26 +22,6 @@ const getFileData = async (filepath) => {
     }
     throw err
   }
-}
-
-/**
- * Returns rank data from a player data response.
- */
-const filterRankData = (data) => {
-  return {
-    ...data.rank,
-    name: data.name,
-    race: data.race
-  }
-}
-
-/**
- * Returns match data from a player data response.
- */
-const filterMatchData = (data, date = new Date()) => {
-  const currentMonth = getMonth(date)
-  const monthMatches = data.matches.filter(match => getMonth(match.match.date) === currentMonth)
-  return Object.fromEntries(monthMatches.map(match => [new Date(match.match.date).toISOString(), match]))
 }
 
 /**
@@ -102,10 +80,10 @@ const writeTimestampedHistoryFiles = async (fnBase, data) => {
   const rankFn = `${fnBase}_rank.json`
   const matchesFn = `${fnBase}_matches.json`
 
-  const rankData = filterRankData(data)
-  const matchData = filterMatchData(data)
+  const rankData = collectRankData(data)
+  const matchData = collectMatchData(data)
 
-  await mergeRankData(rankFn, data, rankData, data => data?.points, data => data?.updated ? new Date(data.updated).toISOString() : null)
+  await mergeRankData(rankFn, data, rankData, data => data?.rankMmr, data => data?.profiles[data?.activeProfile]?.lastActivity ? new Date(data.profiles[data.activeProfile].lastActivity).toISOString() : null)
   await mergeMatchesData(matchesFn, data, matchData)
 }
 

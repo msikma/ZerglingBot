@@ -8,7 +8,8 @@ const constants = require('fs').constants
  * Ensures that a directory exists.
  */
 const ensureDir = async dir => {
-  return fs.mkdir(dir, {recursive: true})
+  await fs.mkdir(dir, {recursive: true})
+  return dir
 }
 
 /**
