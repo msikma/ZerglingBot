@@ -101,14 +101,13 @@ const createEventInterface = async ({chatClient, apiClient, obsClient, discordCl
     }, 125)
 
     // Listen for prediction test messages coming from the admin interface.
-    obsClient.addListener('BroadcastCustomMessage', async message => {
-      if (message.realm !== 'prediction_test') return
-      const req = message.data
-      if (req.action === 'start') {
-        await state.makeWinLosePrediction({...(req.data ?? {})}, 5)
+    obsClient.addListener('CustomEvent', async ev => {
+      if (ev.realm !== 'prediction_test') return
+      if (ev.action === 'start') {
+        await state.makeWinLosePrediction({...(ev.data ?? {})}, 5)
       }
-      if (req.action === 'resolve') {
-        await state.resolveWinLosePrediction(req.result)
+      if (ev.action === 'resolve') {
+        await state.resolveWinLosePrediction(ev.result)
       }
     })
   }
@@ -273,10 +272,9 @@ const createEventInterface = async ({chatClient, apiClient, obsClient, discordCl
    */
   state._initChatterMetadataListener = async () => {
     // Listen for requests to send the chatter metadata.
-    obsClient.addListener('BroadcastCustomMessage', async message => {
-      if (message.realm !== 'chatter_metadata') return
-      const req = message.data
-      if (req.action === 'requestData') {
+    obsClient.addListener('CustomEvent', async ev => {
+      if (ev.realm !== 'chatter_metadata') return
+      if (ev.action === 'requestData') {
         state.broadcastChatterMetadata()
       }
     })
@@ -289,7 +287,7 @@ const createEventInterface = async ({chatClient, apiClient, obsClient, discordCl
    */
   state.broadcastChatterMetadata = async () => {
     const data = await readChatterMetadata(dataPath)
-    return obsClient.send('BroadcastCustomMessage', {realm: 'chatter_metadata', data: {action: 'sendData', payload: data}})
+    return obsClient.call('BroadcastCustomEvent', {eventData: {realm: 'chatter_metadata', action: 'sendData', payload: data}})
   }
 
   /**

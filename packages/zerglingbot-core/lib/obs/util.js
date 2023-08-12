@@ -4,133 +4,63 @@
 /**
  * Returns a list of all scenes, optionally filtered by a name.
  */
-const getAllScenes = async (obs, labelName = null) => {
-  let scenes = (await obs.send('GetSceneList')).scenes
-  if (labelName) {
-    scenes = scenes.filter(scene => scene.name.match(new RegExp(`\\[\\[${labelName}\\]\\]`)))
+const getAllScenes = async (obs, addSources = false, addSettings = false) => {
+  const scenes = (await obs.call('GetSceneList')).scenes
+  if (addSources) {
+    return addSceneSources(obs, scenes, addSettings)
   }
   return scenes
+}
+
+/**
+ * Returns a list of all scenes, optionally filtered by a name.
+ */
+const getAllScenesWithLabel = async (obs, labelName = null, addSources = false, addSettings = false) => {
+  let scenes = await getAllScenes(obs)
+  if (labelName) {
+    scenes = scenes.filter(scene => scene.sceneName.match(new RegExp(`\\[\\[${labelName}\\]\\]`)))
+  }
+  if (addSources) {
+    return addSceneSources(obs, scenes, addSettings)
+  }
+  return scenes
+}
+
+/**
+ * Adds a list of sources to a list of scenes.
+ * 
+ * Scenes normally don't include a list of sources in v5, so we add them here.
+ */
+const addSceneSources = async (obs, scenes, addSettings = false) => {
+  const sceneItemResults = await obs.callBatch(scenes.map(({sceneName}) => ({requestType: 'GetSceneItemList', requestData: {sceneName}})))
+  const scenesWithSources = sceneItemResults.map((res, n) => ({
+    ...scenes[n],
+    sources: res.responseData.sceneItems.map(obj => ({
+      ...obj
+    }))
+  })).flat(Infinity)
+
+  if (!addSettings) {
+    return scenesWithSources
+  }
+
+  // Retrieve input settings.
+  const inputList = scenesWithSources.map(scene => scene.sources.map(source => source.sourceName)).flat(Infinity)
+  const inputSettings = await obs.callBatch(inputList.map(sourceName => ({requestType: 'GetInputSettings', requestData: {inputName: sourceName}})))
+  const sceneSourceSettings = Object.fromEntries(inputList.map((sourceName, n) => [sourceName, inputSettings[n]?.responseData ?? {}]))
+  const scenesWithSourcesAndSettings = scenesWithSources.map(scene => ({...scene, sources: scene.sources.map(source => ({...source, ...sceneSourceSettings[source.sourceName]}))}))
+  return scenesWithSourcesAndSettings
 }
 
 /**
  * Returns an array of promises for switching a source's filters on or off.
  */
 const mapSourceFilterVisibility = (obs, source, filters, visibility) => {
-  return filters.map(filter => obs.send('SetSourceFilterVisibility', {
+  return filters.map(filter => obs.call('SetSourceFilterEnabled', {
     sourceName: source.sourceName,
     filterName: filter.name,
     filterEnabled: visibility
   }))
-}
-
-/**
- * Returns a list of sources matched by a name.
- */
-const getSceneSources = async (obs, scenes, labelName, sourceType = null) => {
-  if (scenes == null) {
-    scenes = await getAllScenes(obs)
-  }
-  const sources = {}
-  for (const scene of scenes) {
-    for (const source of scene.sources) {
-      if (labelName != null && !source.name.includes(`[[${labelName}]]`)) {
-        continue
-      }
-      try {
-        const settings = await obs.send('GetSourceSettings', {sourceName: source.name, sourceType})
-        if (!sources[source.name]) {
-          sources[source.name] = {source, scenes: [], settings}
-        }
-        sources[source.name].scenes.push(scene)
-      }
-      catch (err) {
-        if (err.error !== 'specified source exists but is not of expected type') {
-          throw err
-        }
-      }
-    }
-  }
-  return Object.values(sources)
-}
-
-/**
- * Changes the settings for a Streamlabs chat widget source to turn debugging on/off.
- */
-const setStreamlabsChatSettings = (settings, isDebugging = false) => {
-  const url = new URL(settings.url)
-  if (isDebugging) {
-    url.searchParams.set('simulate', '1')
-    url.searchParams.delete('_simulate')
-  }
-  else {
-    url.searchParams.set('_simulate', '1')
-    url.searchParams.delete('simulate')
-  }
-  return {
-    ...settings,
-    url: String(url)
-  }
-}
-
-/**
- * Returns a list of supported games.
- */
-const getGamesList = async (obs) => {
-  const scenes = await getAllScenes(obs)
-  const games = {}
-  for (const scene of scenes.scenes) {
-    const gameName = scene.name.match(/\[\[Game (.+?)\]\]/)
-    if (gameName == null) continue
-
-    const name = gameName[1]
-    games[name] = true
-  }
-  return Object.keys(games)
-}
-
-/**
- * Returns the currently active game.
- * 
- * This works by simply checking a [[Game]] scene for which source is currently visible.
- */
-const getActiveGame = async (obs) => {
-  try {
-    const scene = (await getAllScenes(obs, 'Game'))[0]
-    const visibleSources = scene.sources.filter(source => source.render === true)
-    for (const source of visibleSources) {
-      const game = source.name.match(/\[\[Game (.+?)\]\]/)
-      if (game != null) {
-        return game[1]
-      }
-    }
-    return null
-  }
-  catch (err) {
-    return null
-  }
-}
-
-
-/**
- * Switches the visibility ('render' value) of a number of sources in any scene.
- */
-const switchSceneSourcesVisibility = async (obs, visible, scenes, labelName, sourceType = null) => {
-  const items = await getSceneSources(obs, scenes, labelName, sourceType)
-  const tasks = []
-  for (const item of items) {
-    for (const scene of item.scenes) {
-      tasks.push(obs.send('SetSceneItemRender', {'scene-name': scene.name, source: item.source.name, render: visible}))
-    }
-  }
-  return Promise.all(tasks)
-}
-
-/**
- * Returns all primary game scenes (the ones linked to the main hotkeys).
- */
-const getGameScenes = async obs => {
-  const scenes = await getAllScenes(obs)
-  return scenes.scenes.filter(scene => scene.name.includes('[[Game]]'))
 }
 
 /**
@@ -141,9 +71,9 @@ const getGameScenes = async obs => {
 const switchSourceFilters = async (obs, sources, labelName) => {
   const filterPromises = []
   for (const source of sources) {
-    const filters = (await obs.send('GetSourceFilters', {sourceName: source.sourceName})).filters
-    const setOff = filters.filter(filter => filter.enabled && !filter.name.includes(`[[${labelName}]]`))
-    const setOn = filters.filter(filter => !filter.enabled && filter.name.includes(`[[${labelName}]]`))
+    const filters = (await obs.call('GetSourceFilterList', {sourceName: source.sourceName})).filters
+    const setOff = filters.filter(filter => filter.filterEnabled && !filter.filterName.includes(`[[${labelName}]]`))
+    const setOn = filters.filter(filter => !filter.filterEnabled && filter.filterName.includes(`[[${labelName}]]`))
     filterPromises.push(
       ...mapSourceFilterVisibility(obs, source, setOff, false),
       ...mapSourceFilterVisibility(obs, source, setOn, true)
@@ -153,43 +83,24 @@ const switchSourceFilters = async (obs, sources, labelName) => {
 }
 
 /**
- * Returns game sources for a list of scenes.
+ * Switches the visibility ('render' value) of a number of sources in any scene.
  */
-const getGameSources = async (obs, scenes) => {
-  const sources = {}
-  for (const scene of scenes) {
-    for (const source of scene.sources) {
-      const matches = source.name.match(/\[\[Game (.+?)\]\]/)
-      if (!matches) {
-        continue
-      }
-      const settings = await obs.send('GetSourceSettings', {sourceName: source.name, sourceType: null})
-      if (!sources[source.name]) {
-        sources[source.name] = {game: matches[1], source, scenes: [], settings}
-      }
-      sources[source.name].scenes.push(scene)
+const switchSceneSourcesVisibility = async (obs, visible, scenes, labelName) => {
+  const tasks = scenes.map(scene => scene.sources.map(source => ({
+    requestType: 'SetSceneItemEnabled',
+    requestData: {
+      sceneName: scene.sceneName,
+      sceneItemId: source.sceneItemId,
+      sceneItemEnabled: visible
     }
-  }
-  return Object.values(sources)
-}
-
-/**
- * Returns the current primary display source.
- */
-const getPrimaryDisplay = async (obs) => {
-  const sources = await getSceneSources(obs, null, 'PrimaryDisplay')
-  return sources[0]
+  }))).flat()
+  return obs.callBatch(tasks)
 }
 
 module.exports = {
-  getActiveGame,
   getAllScenes,
-  getGameScenes,
-  getGamesList,
-  getGameSources,
-  getSceneSources,
-  getPrimaryDisplay,
-  setStreamlabsChatSettings,
-  switchSceneSourcesVisibility,
-  switchSourceFilters
+  getAllScenesWithLabel,
+  addSceneSources,
+  switchSourceFilters,
+  switchSceneSourcesVisibility
 }

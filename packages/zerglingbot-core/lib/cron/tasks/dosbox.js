@@ -2,7 +2,7 @@
 // © MIT license
 
 const {getDOSBoxInstance, getDOSBoxWindowTitle} = require('../../dosbox')
-const {getAllScenes, getSceneSources, switchSourceFilters} = require('../../obs')
+const {getAllScenes, getAllScenesWithLabel, switchSourceFilters} = require('../../obs')
 
 /** Active DOSBox instance state. */
 const state = {
@@ -14,9 +14,7 @@ const state = {
 }
 
 /**
- * Watches the webcam and switches the webcam frame on/off.
- * 
- * If the webcam is not active, the image frame around it must be deactivated too.
+ * Watches for DOSBox instances and sets OBS to capture the correct one.
  */
 const runTaskWatchDOSBox = ({obsClient}) => async (log) => {
   if (!obsClient) return
@@ -41,22 +39,19 @@ const runTaskWatchDOSBox = ({obsClient}) => async (log) => {
 
   // Now that we have a new DOSBox instance, and a window title, set up OBS to use it.
   // There should be just one source, but loop over whatever results we get to be sure.
-  const scenes = await getAllScenes(obsClient, 'Game DOSBox')
-  const sources = await getSceneSources(obsClient, scenes, 'DOSBox', 'display_capture')
-  for (const source of sources) {
-    // Switch the source to the correct DOSBox window.
-    await obsClient.send('SetSourceSettings', {
-      sourceName: source.settings.sourceName,
-      sourceSettings: {
-        ...source.settings.sourceSettings,
-        owner_name: state.window.owner,
-        owner_pid: state.instance.pid,
-        window_name: state.window.title
-      }
-    })
-    // Turn off all filters except the ones with this machine's name.
-    await switchSourceFilters(obsClient, [source.settings], `DOSBox ${state.window.machine}`)
-  }
+  const scenes = await getAllScenesWithLabel(obsClient, 'Game DOSBox', true, true)
+  const source = scenes.map(scene => scene.sources).flat().find(source => source.inputKind === 'screen_capture')
+
+  // Switch the source to the correct DOSBox window.
+  await obsClient.call('SetInputSettings', {
+    inputName: source.sourceName,
+    inputSettings: {
+      application: 'com.dosbox-x'
+    },
+    overlay: true
+  })
+  // Turn off all filters except the ones with this machine's name.
+  await switchSourceFilters(obsClient, [source.settings], `DOSBox ${state.window.machine}`)
 
   log('Switched DOSBox to active machine:', state.window.machine)
 }

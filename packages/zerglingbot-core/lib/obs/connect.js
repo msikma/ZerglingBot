@@ -1,9 +1,10 @@
 // zerglingbot <https://github.com/msikma/zerglingbot>
 // © MIT license
 
-const OBSWebSocket = require('obs-websocket-js')
+const OBSWebSocket = require('obs-websocket-js').default
 const {sleep} = require('../../util/misc')
-const {log, logInfo, logWarn, logError} = require('../../util/log')
+const {makeToolLogger} = require('../../util/log')
+const {getErrorString} = require('../../util/error')
 
 /**
  * Opens websocket connection to OBS.
@@ -12,66 +13,103 @@ const {log, logInfo, logWarn, logError} = require('../../util/log')
  * 
  * For documentation, see: <https://github.com/obsproject/obs-websocket/blob/4.x-compat/docs/generated/protocol.md>
  */
-function openObsWebsocket(address, password) {
+function openObsWebsocket(credentials) {
+  const {log, logInfo, logWarn, logError} = makeToolLogger('obs', null, 'green')
   const obs = new OBSWebSocket()
+
   const state = {
-    isReconnecting: false,
-    isConnecting: false,
-    client: obs
+    // An object containing {address, password}.
+    credentials,
+    // Whether we're currently connected to OBS.
+    isConnected: false,
+    // What's currently happening.
+    status: 'connecting',
+    // Last error that occurred.
+    lastError: null,
+    // Promise that resolves after the initial connection is made.
+    initialConnection: null,
+    // Whether we've ever made the initial connection.
+    hasConnectedOnce: false,
+    // Amount of time to wait before reconnecting.
+    throttleDuration: 1000
   }
 
-  async function connect(reconnectLoop = false) {
-    while (true) {
-      // Try reconnecting continuously after the initial connection.
-      if (reconnectLoop) {
-        if (obs._connected) {
-          await sleep(1000)
-          state.isReconnecting = false
-          continue
-        }
-        if (!state.isReconnecting) {
-          logError`OBS: Lost connection - reconnecting`
-          state.isReconnecting = true
-        }
-      }
-      // Connect using our credentials; retry if it's not working.
-      try {
-        await obs.connect({address, password})
-      }
-      catch (err) {
-        if (!state.isConnecting) {
-          logError`OBS: Can't connect to websocket - retrying`
-          if (err.code !== 'CONNECTION_ERROR') {
-            logError(`OBS`, err)
-          }
-          state.isConnecting = true
-        }
-        await sleep(1000)
-        continue
-      }
-      state.isReconnecting = false
-      state.isConnecting = false
-    
-      const addr = address.split(':')
-      logInfo`Connected to OBS via {green ${addr[0]}}:{yellow ${addr[1]}}`
-    
-      if (reconnectLoop) {
-        continue
-      }
+  /** Promise placeholder, to resolve initialConnection once we've connected to OBS for the first time. */
+  const firstConnectionPromise = new Promise(resolve => {
+    state.initialConnection = resolve
+  })
 
-      // If we're not in the reconnect loop, resolve.
-      return obs
+  /** Returns the current status of the connection. */
+  const getStatus = () => {
+    if (!state.credentials.address) {
+      return {error: true, message: 'Please enter credentials to connect.', code: 'no_credentials', title: 'No credentials'}
+    }
+    if (state.isConnected) {
+      return {error: false, code: 'connected', title: 'Connected'}
+    }
+    if (state.status === 'connecting') {
+      return {error: false, code: 'connecting', title: 'Connecting'}
+    }
+    if (state.status === 'reconnecting') {
+      return {error: false, code: 'reconnecting', title: 'Reconnecting'}
     }
   }
 
-  async function init() {
-    await connect()
-    connect(true)
+  /** Check to see if we're still connected. */
+  const checkConnected = async () => {
+    try {
+      // To check if we're connected, do the smallest possible request.
+      await obs.callBatch([{requestType: 'Sleep', requestData: {sleepMillis: 0}}])
+      return true
+    }
+    catch (err) {
+      return false
+    }
+  }
+
+  async function connect() {
+    while (true) {
+      await sleep(state.throttleDuration)
+
+      // If we're connected, check to see if the connection is still working.
+      if (state.isConnected) {
+        if (await checkConnected()) {
+          continue
+        }
+        else {
+          logError`Lost connection: reconnecting`
+          state.isConnected = false
+          state.status = 'reconnecting'
+        }
+      }
+
+      try {
+        await obs.connect(state.credentials.address, state.credentials.password, {rpcVersion: 1})
+        state.isConnected = true
+        state.status = 'connected'
+        if (!state.hasConnectedOnce) {
+          log`Connection to OBS established`
+          state.hasConnectedOnce = true
+          state.initialConnection()
+        }
+        continue
+      }
+      catch (err) {
+        logWarn`Could not connect: '${getErrorString(err)}'`
+        state.isConnected = false
+        state.status = 'connecting'
+        state.lastError = err
+        continue
+      }
+    }
   }
 
   return {
-    ...state,
-    init
+    obs,
+    state,
+    firstConnectionPromise,
+    getStatus,
+    connect
   }
 }
 

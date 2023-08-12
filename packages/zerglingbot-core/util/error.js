@@ -6,6 +6,17 @@ const {isString} = require('./types')
 const {wrapStack, wrapInMono} = require('./formatting')
 
 /**
+ * Returns a plain string representation of an error.
+ */
+const getErrorString = err => {
+  if (err.message) return err.message
+  if (err.description) return err.description
+  if (err.error) return err.error
+  if (err.code) return err.code
+  return String(err)
+}
+
+/**
  * Extracts interesting or useful information from an error object.
  * 
  * The information is returned in the form of an array of arrays,
@@ -126,5 +137,6 @@ class InternalError extends Error {
 module.exports = {
   InternalError,
   isTempError,
+  getErrorString,
   extractErrorFields
 }

@@ -40,7 +40,7 @@ const createChatTTS = async (obsClient, eventInterface, options) => {
    * Broadcasts the TTS message with audio.
    */
   const broadcastTTSPayload = (messageAudioData) => {
-    return state.obsClient.send('BroadcastCustomMessage', {realm: 'tts_audio', data: messageAudioData})
+    return state.obsClient.call('BroadcastCustomEvent', {eventData: {...messageAudioData, realm: 'tts_audio'}})
   }
 
   /**
@@ -77,35 +77,35 @@ const createChatTTS = async (obsClient, eventInterface, options) => {
     }
 
     // Listen for TTS messages to come in, and then utter them.
-    state.obsClient.addListener('BroadcastCustomMessage', async message => {
-      if (message.realm !== 'tts_source') return
-      if (state.blacklistedUsers.includes(message?.data?.seed)) return
-      if (state.messageQueue[message?.data?.id] && !state.ignoreQueue) return
+    state.obsClient.addListener('CustomEvent', async ev => {
+      if (ev.realm !== 'tts_source') return
+      if (state.blacklistedUsers.includes(ev?.seed)) return
+      if (state.messageQueue[ev?.id] && !state.ignoreQueue) return
 
       // Register this message to the queue so we don't repeat it multiple times.
-      addToQueue(message?.data?.id)
+      addToQueue(ev?.id)
 
       try {
         // Retrieve an "upgraded" version of the message, with audio included.
-        const [voiceData, audioData] = await getAudioMessage(message.data, options)
+        const [voiceData, audioData] = await getAudioMessage(ev, options)
 
         const messageAudioData = {
-          ...message.data,
+          ...ev,
           audio: audioData,
           meta: {
-            ...message.data.meta,
+            ...ev.meta,
             voice: voiceData
           }
         }
 
-        log`Broadcasting TTS message: {green ${message.data.seed}}: {yellow ${message.data.text}} ({blue ${message.data.id}} {magenta ${voiceData.name}})`
+        log`Broadcasting TTS message: {green ${ev.seed}}: {yellow ${ev.text}} ({blue ${ev.id}} {magenta ${voiceData.name}})`
 
         // Broadcast the same message back, but as tts_audio and with an audio buffer included.
         await broadcastTTSPayload(messageAudioData)
       }
       catch (err) {
-        logError(`Could not generate TTS message:`, message?.data, err)
-        state.eventInterface.postFeedbackItems([`Could not generate TTS message! Sorry, try again later? Error ID: "${message?.data?.id ?? '(none)'}".`], true)
+        logError(`Could not generate TTS message:`, ev, err)
+        state.eventInterface.postFeedbackItems([`Could not generate TTS message! Sorry, try again later? Error ID: "${ev?.id ?? '(none)'}".`], true)
       }
     })
   }

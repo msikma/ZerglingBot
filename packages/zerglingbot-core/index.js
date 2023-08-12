@@ -197,9 +197,9 @@ function ZerglingBot({pathConfig, pathCache, pathFFMPEG, pathFFProbe, pathSay, p
    */
   async function initOBS() {
     const obsCredentials = state.config.obs
-    const obs = openObsWebsocket(obsCredentials.address, obsCredentials.password)
-    obs.init()
-    state.obsClient = obs.client
+    const obs = openObsWebsocket(obsCredentials)
+    obs.connect()
+    state.obsClient = obs.obs
   }
 
   /**

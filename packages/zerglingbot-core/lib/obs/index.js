@@ -2,7 +2,6 @@
 // © MIT license
 
 module.exports = {
-  ...require('./chat'),
   ...require('./connect'),
   ...require('./util'),
   ...require('./webcam')
