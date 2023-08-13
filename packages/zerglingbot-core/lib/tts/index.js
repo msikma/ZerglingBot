@@ -1,7 +1,7 @@
 // zerglingbot <https://github.com/msikma/zerglingbot>
 // © MIT license
 
-const {log, logError} = require('../../util/log')
+const {log, logWarn, logError} = require('../../util/log')
 const {utterMessage, getUtteranceMetadata} = require('../voice')
 const {pickTTSConfig} = require('./config')
 
@@ -59,7 +59,7 @@ const createChatTTS = async (obsClient, eventInterface, options) => {
    *         '          <span class="name" style="background: rgba(0, 0, 0, 0) linear-gradient(0deg, rgb(246, 139, 0), rgb(255, 191, 0)) repeat scroll 0% 0% padding-box text; -webkit-text-fill-color: transparent;">Undeviginti19</span>' +
    *         '        </span>'
    *     },
-   *     color: {
+   *     colors: {
    *       a: 'rgb(246, 139, 0)',
    *       b: 'rgb(255, 191, 0)'
    *     }
@@ -78,6 +78,9 @@ const createChatTTS = async (obsClient, eventInterface, options) => {
 
     // Listen for TTS messages to come in, and then utter them.
     state.obsClient.addListener('CustomEvent', async ev => {
+      if (ev.realm === 'tts_killswitch') {
+        logWarn`Killing TTS message: {green ${ev.seed}}: {yellow ${ev.text}} ({blue ${ev.id}})`
+      }
       if (ev.realm !== 'tts_source') return
       if (state.blacklistedUsers.includes(ev?.seed)) return
       if (state.messageQueue[ev?.id] && !state.ignoreQueue) return
