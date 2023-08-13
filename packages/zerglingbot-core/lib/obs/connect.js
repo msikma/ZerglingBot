@@ -6,6 +6,9 @@ const {sleep} = require('../../util/misc')
 const {makeToolLogger} = require('../../util/log')
 const {getErrorString} = require('../../util/error')
 
+// Error code for when the websocket is not found.
+const OBS_WS_NOT_FOUND = 1006
+
 /**
  * Opens websocket connection to OBS.
  * 
@@ -68,6 +71,7 @@ function openObsWebsocket(credentials) {
   }
 
   async function connect() {
+    log`Connecting to ${new URL(state.credentials.address).host}`
     while (true) {
       await sleep(state.throttleDuration)
 
@@ -87,6 +91,9 @@ function openObsWebsocket(credentials) {
         await obs.connect(state.credentials.address, state.credentials.password, {rpcVersion: 1})
         state.isConnected = true
         state.status = 'connected'
+        if (state.hasConnectedOnce) {
+          log`Connection restored`
+        }
         if (!state.hasConnectedOnce) {
           log`Connection to OBS established`
           state.hasConnectedOnce = true
@@ -95,7 +102,12 @@ function openObsWebsocket(credentials) {
         continue
       }
       catch (err) {
-        logWarn`Could not connect: '${getErrorString(err)}'`
+        // Only log the warn if it's an error different from the regular connection error.
+        // The OBS_WS_NOT_FOUND is always seen once per cycle if OBS is shut down.
+        // Also, only log the error once if it doesn't change.
+        if (!(err.code === OBS_WS_NOT_FOUND || String(state.lastError) === String(err))) {
+          logWarn`Could not connect: '${getErrorString(err)}'`
+        }
         state.isConnected = false
         state.status = 'connecting'
         state.lastError = err
