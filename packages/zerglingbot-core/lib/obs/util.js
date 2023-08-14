@@ -58,7 +58,7 @@ const addSceneSources = async (obs, scenes, addSettings = false) => {
 const mapSourceFilterVisibility = (obs, source, filters, visibility) => {
   return filters.map(filter => obs.call('SetSourceFilterEnabled', {
     sourceName: source.sourceName,
-    filterName: filter.name,
+    filterName: filter.filterName,
     filterEnabled: visibility
   }))
 }

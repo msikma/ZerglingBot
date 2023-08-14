@@ -10,7 +10,19 @@ const state = {
     command: '',
     pid: 0
   },
-  window: null
+  machine: null
+}
+
+/**
+ * Returns the current machine name from the invocation command.
+ * 
+ * This requires that the command includes this argument, e.g. "-dada78641-machine-name Delphi".
+ * DOSBox will ignore unrecognized startup arguments.
+ */
+const getMachineName = cmd => {
+  if (!cmd) return null
+  const match = cmd.match(/-dada78641-machine-name ([^\s]*)/)
+  if (match) return match[1]
 }
 
 /**
@@ -20,29 +32,23 @@ const runTaskWatchDOSBox = ({obsClient}) => async (log) => {
   if (!obsClient) return
   
   const {isActive, instance} = await getDOSBoxInstance()
+  const machine = getMachineName(instance.command)
 
-  if (!isActive || (state.instance.pid === instance.pid && state.window)) {
+  if (!isActive || !machine || (state.instance.pid === instance.pid) || (state.machine === machine)) {
     return
   }
 
   // If an instance of DOSBox is running and it's a new process, set OBS up for it.
   state.instance = {...instance}
-  state.window = null
-
-  // Sometimes there's a slight delay before we can get the window title.
-  // In that case, just wait and try again next cycle.
-  const windowInfo = await getDOSBoxWindowTitle(state.instance.command)
-  if (windowInfo === null) {
-    return
-  }
-  state.window = windowInfo
+  state.machine = machine
 
   // Now that we have a new DOSBox instance, and a window title, set up OBS to use it.
   // There should be just one source, but loop over whatever results we get to be sure.
   const scenes = await getAllScenesWithLabel(obsClient, 'Game DOSBox', true, true)
-  const source = scenes.map(scene => scene.sources).flat().find(source => source.inputKind === 'screen_capture')
+  const source = scenes.map(scene => scene.sources).flat().find(source => source.sourceName.includes('[[DOSBoxScreenCapture]]'))
 
   // Switch the source to the correct DOSBox window.
+  // TODO: this seems to be broken. When DOSBox exits before OBS, it needs to be reset manually in OBS itself.
   await obsClient.call('SetInputSettings', {
     inputName: source.sourceName,
     inputSettings: {
@@ -51,9 +57,9 @@ const runTaskWatchDOSBox = ({obsClient}) => async (log) => {
     overlay: true
   })
   // Turn off all filters except the ones with this machine's name.
-  await switchSourceFilters(obsClient, [source.settings], `DOSBox ${state.window.machine}`)
+  await switchSourceFilters(obsClient, [source], `DOSBox ${state.machine}`)
 
-  log('Switched DOSBox to active machine:', state.window.machine)
+  log('Switched DOSBox to active machine:', state.machine)
 }
 
 module.exports = {
