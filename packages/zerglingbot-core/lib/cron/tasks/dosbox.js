@@ -1,8 +1,8 @@
 // zerglingbot <https://github.com/msikma/zerglingbot>
 // © MIT license
 
-const {getDOSBoxInstance, getDOSBoxWindowTitle} = require('../../dosbox')
-const {getAllScenes, getAllScenesWithLabel, switchSourceFilters} = require('../../obs')
+const {getDOSBoxInstance} = require('../../dosbox')
+const {getAllScenesWithLabel, switchSourceFilters} = require('../../obs')
 
 /** Active DOSBox instance state. */
 const state = {
