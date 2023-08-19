@@ -121,6 +121,7 @@ function openObsWebsocket(credentials) {
     state,
     firstConnectionPromise,
     getStatus,
+    isConnected: checkConnected,
     connect
   }
 }

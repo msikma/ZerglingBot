@@ -33,6 +33,7 @@ const cronTasks = require('./lib/cron/tasks')
 function ZerglingBot({pathConfig, pathCache, pathFFMPEG, pathFFProbe, pathSay, pathNode, includeDates = false, noRemoteLogging = false} = {}) {
   const state = {
     // Reference to the OBS websocket client.
+    obsSocket: null,
     obsClient: null,
 
     // Reference to our primary interaction interface.
@@ -199,6 +200,7 @@ function ZerglingBot({pathConfig, pathCache, pathFFMPEG, pathFFProbe, pathSay, p
     const obsCredentials = state.config.obs
     const obs = openObsWebsocket(obsCredentials)
     obs.connect()
+    state.obsSocket = obs
     state.obsClient = obs.obs
   }
 

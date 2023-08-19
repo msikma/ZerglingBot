@@ -44,6 +44,7 @@ const startCronTask = (name, task, state, time) => {
       await sleep(time)
       try {
         const context = {
+          obsSocket: state.obsSocket,
           obsClient: state.obsClient,
           apiClient: state.apiClient,
           chatClient: state.chatClient,

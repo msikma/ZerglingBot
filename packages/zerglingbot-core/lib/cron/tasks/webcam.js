@@ -13,8 +13,8 @@ const state = {
  * 
  * If the webcam is not active, the image frame around it must be deactivated too.
  */
-const runTaskWatchWebcam = ({obsClient}) => async (log) => {
-  if (!obsClient) return
+const runTaskWatchWebcam = ({obsClient, obsSocket}) => async (log) => {
+  if (!obsSocket.isConnected() || !obsClient) return
   
   // Whether the webcam is currently broadcasting an image.
   const camActive = await isWebcamActive(obsClient)
