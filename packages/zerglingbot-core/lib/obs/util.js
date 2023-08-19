@@ -1,6 +1,8 @@
 // zerglingbot <https://github.com/msikma/zerglingbot>
 // © MIT license
 
+const {filterSceneSourcesByKey} = require('./data')
+
 /**
  * Returns a list of all scenes, optionally filtered by a name.
  */
@@ -24,6 +26,39 @@ const getAllScenesWithLabel = async (obs, labelName = null, addSources = false, 
     return addSceneSources(obs, scenes, addSettings)
   }
   return scenes
+}
+
+/**
+ * For every scene, disable all sources that match key, and enable all sources that match key and value.
+ */
+const toggleSourcesByKey = async (obs, scenes, key, value) => {
+  const sources = filterSceneSourcesByKey(scenes, key)
+
+  // TODO: if reinstating the code below, cut from here.
+  const calls = []
+  for (const [sourceValue, sceneSources] of Object.entries(sources)) {
+    for (const source of sceneSources) {
+      calls.push(obs.call(
+        'SetSceneItemEnabled', {
+          sceneName: source._scene.sceneName,
+          sceneItemId: source.sceneItemId,
+          sceneItemEnabled: sourceValue === value
+        }
+      ))
+    }
+  }
+  return Promise.all(calls)
+
+  // TODO: this is more efficient, but it crashes OBS. Bring back when the bug is fixed.
+  // const calls = Object.entries(sources).map(([sourceValue, sources]) => sources.map(source => ({
+  //   requestType: 'SetSceneItemEnabled',
+  //   requestData: {
+  //     sceneName: source._scene.sceneName,
+  //     sceneItemId: source.sceneItemId,
+  //     sceneItemEnabled: sourceValue === value
+  //   }
+  // })))
+  // return obs.callBatch(calls)
 }
 
 /**
@@ -100,6 +135,7 @@ const switchSceneSourcesVisibility = async (obs, visible, scenes, labelName) => 
 module.exports = {
   getAllScenes,
   getAllScenesWithLabel,
+  toggleSourcesByKey,
   addSceneSources,
   switchSourceFilters,
   switchSceneSourcesVisibility

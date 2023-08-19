@@ -4,5 +4,6 @@
 module.exports = {
   ...require('./connect'),
   ...require('./util'),
+  ...require('./data'),
   ...require('./webcam')
 }

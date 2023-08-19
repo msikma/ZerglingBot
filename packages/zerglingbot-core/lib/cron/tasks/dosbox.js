@@ -2,7 +2,7 @@
 // © MIT license
 
 const {getDOSBoxInstance} = require('../../dosbox')
-const {getAllScenesWithLabel, switchSourceFilters} = require('../../obs')
+const {getAllScenesWithLabel, switchSourceFilters, toggleSourcesByKey} = require('../../obs')
 
 /** Active DOSBox instance state. */
 const state = {
@@ -42,22 +42,10 @@ const runTaskWatchDOSBox = ({obsClient}) => async (log) => {
   state.instance = {...instance}
   state.machine = machine
 
-  // Now that we have a new DOSBox instance, and a window title, set up OBS to use it.
-  // There should be just one source, but loop over whatever results we get to be sure.
+  // Now that we have a new DOSBox instance, we should enable its capture source
+  // and disable the old one.
   const scenes = await getAllScenesWithLabel(obsClient, 'Game DOSBox', true, true)
-  const source = scenes.map(scene => scene.sources).flat().find(source => source.sourceName.includes('[[DOSBoxScreenCapture]]'))
-
-  // Switch the source to the correct DOSBox window.
-  // TODO: this seems to be broken. When DOSBox exits before OBS, it needs to be reset manually in OBS itself.
-  await obsClient.call('SetInputSettings', {
-    inputName: source.sourceName,
-    inputSettings: {
-      application: 'com.dosbox-x'
-    },
-    overlay: true
-  })
-  // Turn off all filters except the ones with this machine's name.
-  await switchSourceFilters(obsClient, [source], `DOSBox ${state.machine}`)
+  await toggleSourcesByKey(obsClient, scenes, 'DOSBox', machine)
 
   log('Switched DOSBox to active machine:', state.machine)
 }
