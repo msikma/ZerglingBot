@@ -2,6 +2,9 @@
 // © MIT license
 
 const {createPredictionFileSync, unpackStreamData, unpackUserData, unpackOutcomeData, unpackPredictionData} = require('./data')
+const {createStreamInfoListenerBroadcaster} = require('./lb/stream-info')
+const {createChatterMetadataListenerBroadcaster} = require('./lb/chatter-metadata')
+const {createListenerBroadcasterFactory} = require('./factory')
 const {readChatterMetadata} = require('../data')
 const {setAsyncInterval} = require('../../util/async')
 const {getRandomFromArray} = require('../../util/prng')
@@ -47,46 +50,33 @@ const createStreamInterface = async ({chatClient, apiClient, obsClient, discordC
       isInitialized: false,
       currentID: null,
       objects: {}
-    }
+    },
+
+    chatClient,
+    apiClient,
+    obsClient,
+    discordClient,
+
+    config,
+    dataPath,
+
+    // Listener functions that must be called once during startup.
+    initListeners: []
   }
 
   // Ensure we have usernames and user IDs for the broadcaster and the bot account.
   state.broadcasterUser = await apiClient.users.getUserByName(state.broadcasterUsername)
   state.botUser = await apiClient.users.getUserByName(state.botUsername)
 
-  /**
-   * Returns information about the stream.
-   */
-  state.getStreamInfo = async () => {
-    const userObj = await apiClient.users.getUserByName('rtainjapan')
-    const user = unpackUserData(userObj)
-    const streamObj = await userObj.getStream()
-    const stream = unpackStreamData(streamObj)
-    return {
-      user,
-      stream
-    }
-  }
+  // Create our ListenerBroadcaster factory so we can easily transmit data to widgets.
+  const {broadcastRealmData, createListenerBroadcaster} = createListenerBroadcasterFactory({obsClient})
+  state._createListenerBroadcaster = createListenerBroadcaster
+  state.broadcastRealmData = broadcastRealmData
 
-  /**
-   * Broadcasts the current stream info to connected websocket clients.
-   */
-  state.broadcastStreamInfo = async () => {
-    const data = await state.getStreamInfo()
-    return obsClient.call('BroadcastCustomEvent', {eventData: {realm: 'stream_info', action: 'sendData', payload: data}})
-  }
-
-  /**
-   * Listens for requests to get the stream info.
-   */
-  state._initStreamInfoListener = async () => {
-    obsClient.addListener('CustomEvent', async ev => {
-      if (ev.realm !== 'stream_info') return
-      if (ev.action === 'requestData') {
-        state.broadcastStreamInfo()
-      }
-    })
-  }
+  /** Stream info ListenerBroadcaster. */
+  createStreamInfoListenerBroadcaster(state)
+  /** Chatter metadata ListenerBroadcaster. */
+  createChatterMetadataListenerBroadcaster(state)
 
   /**
    * Initiates the code that updates prediction status.
@@ -302,29 +292,6 @@ const createStreamInterface = async ({chatClient, apiClient, obsClient, discordC
   }
 
   /**
-   * Listens for requests to get the chatter metadata.
-   */
-  state._initChatterMetadataListener = async () => {
-    // Listen for requests to send the chatter metadata.
-    obsClient.addListener('CustomEvent', async ev => {
-      if (ev.realm !== 'chatter_metadata') return
-      if (ev.action === 'requestData') {
-        state.broadcastChatterMetadata()
-      }
-    })
-  }
-
-  /**
-   * Broadcasts the chatter metadata to connected websocket clients.
-   * 
-   * This allows the chat to know which users need which race icons.
-   */
-  state.broadcastChatterMetadata = async () => {
-    const data = await readChatterMetadata(dataPath)
-    return obsClient.call('BroadcastCustomEvent', {eventData: {realm: 'chatter_metadata', action: 'sendData', payload: data}})
-  }
-
-  /**
    * Posts feedback lines to the default channel chat.
    * 
    * If 'quiet' is true, an exclamation point is prepended to make the line not show up on stream.
@@ -347,8 +314,9 @@ const createStreamInterface = async ({chatClient, apiClient, obsClient, discordC
    * Initializes all listeners that broadcast data in response to a signal.
    */
   state._initBroadcastListeners = () => {
-    state._initStreamInfoListener()
-    state._initChatterMetadataListener()
+    for (const initFunction of state.initListeners) {
+      initFunction()
+    }
   }
 
   // Initialize the prediction worker.

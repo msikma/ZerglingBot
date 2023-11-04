@@ -57,7 +57,7 @@ const sc_race = {
     }
     await setChatterMetadata(dataPath, username, {tags: {sc_race: race.slug}})
     await streamInterface.postToChannelID(`Updated StarCraft race for ${username} to ${race.name}.`, true)
-    await streamInterface.broadcastChatterMetadata()
+    await streamInterface.broadcastRealmData('chatter_metadata')
     log`Updated race for {red ${username}} to {blue ${race.name}}`
   }
 }
