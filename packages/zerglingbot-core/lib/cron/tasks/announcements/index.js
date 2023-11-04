@@ -13,11 +13,11 @@ const state = {
  * 
  * If the webcam is not active, the image frame around it must be deactivated too.
  */
-const runTaskAnnouncements = ({eventInterface, taskConfig}) => async (log) => {
+const runTaskAnnouncements = ({streamInterface, taskConfig}) => async (log) => {
   // On first run, create the task queue and add our messages.
   if (state.queue === null) {
     state.queue = createTaskQueue()
-    const messages = (await eventInterface.getChatAnnouncements()).filter(message => message.isEnabled)
+    const messages = (await streamInterface.getChatAnnouncements()).filter(message => message.isEnabled)
     const tasks = messages.map(message => ({data: message, delay: message.delay}))
     log(`Queued ${tasks.length} announcements`)
     state.queue.addTasks(tasks)
@@ -30,7 +30,7 @@ const runTaskAnnouncements = ({eventInterface, taskConfig}) => async (log) => {
   todo.forEach(async task => {
     const {data} = task
     
-    await eventInterface.makeAnnouncement({message: data.message, color: data.color})
+    await streamInterface.makeAnnouncement({message: data.message, color: data.color})
     state.queue.markTaskAsDone(task)
   })
 }

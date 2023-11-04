@@ -37,7 +37,7 @@ const isActive = predictionStatus => {
  * This is the primary interface for higher level functions that relate to Twitch in some way.
  * All functions here do something that directly affects the Twitch interface around the stream.
  */
-const createEventInterface = async ({chatClient, apiClient, obsClient, discordClient, config, dataPath}) => {
+const createStreamInterface = async ({chatClient, apiClient, obsClient, discordClient, config, dataPath}) => {
   const state = {
     broadcasterUsername: config.app.broadcaster_username,
     botUsername: config.app.bot_username,
@@ -360,5 +360,5 @@ const createEventInterface = async ({chatClient, apiClient, obsClient, discordCl
 }
 
 module.exports = {
-  createEventInterface
+  createStreamInterface
 }

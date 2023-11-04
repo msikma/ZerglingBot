@@ -74,7 +74,7 @@ const help = {
   help: 'Displays a list of commands, or more info about a specific command.',
   isSystemCommand: true,
   isHidden: false,
-  action: async ({eventInterface, target, config}, args, actionConfig, commands, trigger) => {
+  action: async ({streamInterface, target, config}, args, actionConfig, commands, trigger) => {
     const cmdName = getUserCommand(args.commandName)
 
     if (!cmdName) {
@@ -82,16 +82,16 @@ const help = {
       const usableCommands = Object.values(commands).filter(cmd => cmd.isHidden !== true)
       const commandsString = usableCommands.map(cmd => getUsage(cmd, trigger, config.actions[cmd.name] || {}, true)).flat().join(', ')
 
-      return eventInterface.postToChannelID(`Available commands: ${commandsString}`, true)
+      return streamInterface.postToChannelID(`Available commands: ${commandsString}`, true)
     }
     else {
       // Display info about a specific command.
       const command = getApplicableCommand(cmdName, commands, config)
       if (!command) {
-        return eventInterface.postToChannelID(`Command not found: "${cmdName}"`, true)
+        return streamInterface.postToChannelID(`Command not found: "${cmdName}"`, true)
       }
 
-      return eventInterface.postToChannelID(`${await getHelp(command, cmdName, config.actions[command.name])}`, true)
+      return streamInterface.postToChannelID(`${await getHelp(command, cmdName, config.actions[command.name])}`, true)
     }
   }
 }

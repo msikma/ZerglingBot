@@ -19,9 +19,9 @@ const reply = {
     const trigger = findTrigger(actionConfig?.triggers ?? [], userTrigger)
     return trigger?.help ?? 'No help found.'
   },
-  action: async ({eventInterface, target}, args, actionConfig, commands, userTrigger) => {
+  action: async ({streamInterface, target}, args, actionConfig, commands, userTrigger) => {
     const trigger = findTrigger(actionConfig.triggers, userTrigger)
-    return eventInterface.postToChannelID(`${trigger.reply}`, true)
+    return streamInterface.postToChannelID(`${trigger.reply}`, true)
   }
 }
 

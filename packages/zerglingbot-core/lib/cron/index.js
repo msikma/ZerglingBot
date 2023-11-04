@@ -48,7 +48,7 @@ const startCronTask = (name, task, state, time) => {
           obsClient: state.obsClient,
           apiClient: state.apiClient,
           chatClient: state.chatClient,
-          eventInterface: state.eventInterface,
+          streamInterface: state.streamInterface,
           config: state.config,
           configPath: state.configPath,
           paths: state.paths,

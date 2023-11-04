@@ -48,16 +48,16 @@ const sc_race = {
     'a2bab21e-2abe-4bd5-8a2f-3d87d0981726': 'changeRaceInChat'
   },
   help: async ({config}) => `Sets a user's race icon in chat.`,
-  action: async ({apiClient, eventInterface, dataPath}, type, msg, config, msgObject) => {
+  action: async ({apiClient, streamInterface, dataPath}, type, msg, config, msgObject) => {
     const username = msgObject.userName
     const [race, isValid] = getRaceFromMessage(msg)
     if (!isValid) {
-      await eventInterface.postToChannelID(`Could not set your StarCraft race, ${username}. Pick one of T, P, Z, Random or None.`, true)
+      await streamInterface.postToChannelID(`Could not set your StarCraft race, ${username}. Pick one of T, P, Z, Random or None.`, true)
       return log`Could not set race for {red ${username}}; value was {blue ${msg}}`
     }
     await setChatterMetadata(dataPath, username, {tags: {sc_race: race.slug}})
-    await eventInterface.postToChannelID(`Updated StarCraft race for ${username} to ${race.name}.`, true)
-    await eventInterface.broadcastChatterMetadata()
+    await streamInterface.postToChannelID(`Updated StarCraft race for ${username} to ${race.name}.`, true)
+    await streamInterface.broadcastChatterMetadata()
     log`Updated race for {red ${username}} to {blue ${race.name}}`
   }
 }

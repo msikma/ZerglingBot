@@ -8,7 +8,7 @@ const {ApiClient} = require('@twurple/api')
 const {RefreshingAuthProvider, exchangeCode} = require('@twurple/auth')
 const {PubSubClient} = require('@twurple/pubsub')
 const {ChatClient} = require('@twurple/chat')
-const {createEventInterface} = require('./lib/event')
+const {createStreamInterface} = require('./lib/stream')
 const {unpackMeta} = require('./lib/chat')
 const {createChatTTS, pickTTSConfig} = require('./lib/tts')
 const {createCronManager} = require('./lib/cron')
@@ -37,7 +37,7 @@ function ZerglingBot({pathConfig, pathCache, pathFFMPEG, pathFFProbe, pathSay, p
     obsClient: null,
 
     // Reference to our primary interaction interface.
-    eventInterface: null,
+    streamInterface: null,
 
     // Reference to the Twitch chat client.
     chatClient: null,
@@ -209,7 +209,7 @@ function ZerglingBot({pathConfig, pathCache, pathFFMPEG, pathFFProbe, pathSay, p
    */
   async function initTTS() {
     const configTTS = pickTTSConfig(state.config)
-    const chatTTS = await createChatTTS(state.obsClient, state.eventInterface, {...configTTS, pathFFMPEG, pathSay})
+    const chatTTS = await createChatTTS(state.obsClient, state.streamInterface, {...configTTS, pathFFMPEG, pathSay})
     chatTTS.setUserBlocklist([state.config.app.bot_username])
     state.streamTools.chatTTS = chatTTS
   }
@@ -318,7 +318,7 @@ function ZerglingBot({pathConfig, pathCache, pathFFMPEG, pathFFProbe, pathSay, p
    * Creates the event interface, which contains our high level code for API interaction.
    */
   async function initInterface() {
-    const eventInterface = await createEventInterface({
+    const streamInterface = await createStreamInterface({
       chatClient: state.chatClient,
       obsClient: state.obsClient,
       discordClient: state.discordClient,
@@ -326,7 +326,7 @@ function ZerglingBot({pathConfig, pathCache, pathFFMPEG, pathFFProbe, pathSay, p
       dataPath: state.dataPath,
       config: state.config
     })
-    state.eventInterface = eventInterface
+    state.streamInterface = streamInterface
   }
 
   /**
@@ -360,7 +360,7 @@ function ZerglingBot({pathConfig, pathCache, pathFFMPEG, pathFFProbe, pathSay, p
     return {
       chatClient: state.chatClient,
       discordClient: state.discordClient,
-      eventInterface: state.eventInterface,
+      streamInterface: state.streamInterface,
       apiClient: state.apiClient,
       config: state.config,
       dataPath: state.dataPath

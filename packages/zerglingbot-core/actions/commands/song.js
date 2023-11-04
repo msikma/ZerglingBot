@@ -39,13 +39,13 @@ const song = {
   triggers: ['song', 'nowplaying'],
   takes: [],
   help: `Shows the song that's currently playing.`,
-  action: async ({chatClient, eventInterface, dataPath, target}, args, actionConfig) => {
+  action: async ({chatClient, streamInterface, dataPath, target}, args, actionConfig) => {
     const npFile = path.join(dataPath, 'now_playing.json')
     const np = await getNowPlaying(npFile)
     if (!np.isCurrentlyPlaying) {
-      return eventInterface.postToChannelID(`Not currently playing a song.`, true)
+      return streamInterface.postToChannelID(`Not currently playing a song.`, true)
     }
-    return eventInterface.postToChannelID(`Now playing: ${formatSong(np.latestSong)}`, true)
+    return streamInterface.postToChannelID(`Now playing: ${formatSong(np.latestSong)}`, true)
   }
 }
 
