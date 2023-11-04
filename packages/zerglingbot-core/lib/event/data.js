@@ -6,35 +6,72 @@ const {rawDataSymbol} = require('@twurple/common')
 const path = require('path')
 const isEqual = require('lodash.isequal')
 const {fileJsonSync} = require('../../util/fs')
+const {unpackTwurpleData} = require('../../util/twurple')
 
 /**
  * Unpacks public data from HelixPredictor objects.
  * 
  * <https://twurple.js.org/reference/api/classes/HelixPredictor.html>
  */
-const unpackPredictorData = predictorObject => {
-  const metaKeys = [
+const unpackPredictorData = obj => (
+  unpackTwurpleData([
     'channelPointsUsed',
     'channelPointsWon',
     'userDisplayName',
     'userId',
     'userName'
-  ]
+  ], obj)
+)
 
-  const data = {}
-  for (const key of metaKeys) {
-    data[key] = predictorObject[key]
-  }
+/**
+ * Unpacks public data from HelixStream objects.
+ * 
+ * <https://twurple.js.org/reference/api/classes/HelixStream.html>
+ */
+const unpackStreamData = obj => (
+  unpackTwurpleData([
+    'gameId',
+    'gameName',
+    'id',
+    'isMature',
+    'language',
+    'startDate',
+    'tags',
+    'thumbnailUrl',
+    'title',
+    'type',
+    'userDisplayName',
+    'userId',
+    'userName',
+    'viewers'
+  ], obj)
+)
 
-  return data
-}
+/**
+ * Unpacks public data from HelixUser objects.
+ * 
+ * <https://twurple.js.org/reference/api/classes/HelixUser.html>
+ */
+const unpackUserData = obj => (
+  unpackTwurpleData([
+    'broadcasterType',
+    'creationDate',
+    'description',
+    'displayName',
+    'id',
+    'name',
+    'offlinePlaceholderUrl',
+    'profilePictureUrl',
+    'type'
+  ], obj)
+)
 
 /**
  * Unpacks public data from HelixPredictionOutcome objects.
  * 
  * <https://twurple.js.org/reference/api/classes/HelixPredictionOutcome.html>
  */
-const unpackOutcomeData = outcomeObject => {
+const unpackOutcomeData = obj => {
   const metaKeys = [
     // One of "BLUE" | "PINK".
     'color',
@@ -43,12 +80,9 @@ const unpackOutcomeData = outcomeObject => {
     'totalChannelPoints',
     'users'
   ]
+  const data = unpackTwurpleData(metaKeys, obj)
 
-  const data = {}
-  for (const key of metaKeys) {
-    data[key] = outcomeObject[key]
-  }
-  data.topPredictors = outcomeObject.topPredictors.map(predictor => unpackPredictorData(predictor))
+  data.topPredictors = obj.topPredictors.map(predictor => unpackPredictorData(predictor))
 
   return data
 }
@@ -142,6 +176,8 @@ const createPredictionFileSync = async (pathData) => {
 }
 
 module.exports = {
+  unpackUserData,
+  unpackStreamData,
   unpackOutcomeData,
   unpackPredictionData,
   unpackPredictorData,

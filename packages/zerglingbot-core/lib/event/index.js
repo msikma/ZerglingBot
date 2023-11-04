@@ -1,7 +1,7 @@
 // zerglingbot <https://github.com/msikma/zerglingbot>
 // © MIT license
 
-const {createPredictionFileSync, unpackOutcomeData, unpackPredictionData} = require('./data')
+const {createPredictionFileSync, unpackStreamData, unpackUserData, unpackOutcomeData, unpackPredictionData} = require('./data')
 const {readChatterMetadata} = require('../data')
 const {setAsyncInterval} = require('../../util/async')
 const {getRandomFromArray} = require('../../util/prng')
@@ -53,6 +53,40 @@ const createEventInterface = async ({chatClient, apiClient, obsClient, discordCl
   // Ensure we have usernames and user IDs for the broadcaster and the bot account.
   state.broadcasterUser = await apiClient.users.getUserByName(state.broadcasterUsername)
   state.botUser = await apiClient.users.getUserByName(state.botUsername)
+
+  /**
+   * Returns information about the stream.
+   */
+  state.getStreamInfo = async () => {
+    const userObj = await apiClient.users.getUserByName('rtainjapan')
+    const user = unpackUserData(userObj)
+    const streamObj = await userObj.getStream()
+    const stream = unpackStreamData(streamObj)
+    return {
+      user,
+      stream
+    }
+  }
+
+  /**
+   * Broadcasts the current stream info to connected websocket clients.
+   */
+  state.broadcastStreamInfo = async () => {
+    const data = await state.getStreamInfo()
+    return obsClient.call('BroadcastCustomEvent', {eventData: {realm: 'stream_info', action: 'sendData', payload: data}})
+  }
+
+  /**
+   * Listens for requests to get the stream info.
+   */
+  state._initStreamInfoListener = async () => {
+    obsClient.addListener('CustomEvent', async ev => {
+      if (ev.realm !== 'stream_info') return
+      if (ev.action === 'requestData') {
+        state.broadcastStreamInfo()
+      }
+    })
+  }
 
   /**
    * Initiates the code that updates prediction status.
@@ -309,10 +343,18 @@ const createEventInterface = async ({chatClient, apiClient, obsClient, discordCl
     return Promise.all(feedbackItems.map(item => state.postToChannelID(item, quiet, channelID)))
   }
 
+  /**
+   * Initializes all listeners that broadcast data in response to a signal.
+   */
+  state._initBroadcastListeners = () => {
+    state._initStreamInfoListener()
+    state._initChatterMetadataListener()
+  }
+
   // Initialize the prediction worker.
   state._initPredictionSync()
-  // Initialize the listener for chatter metadata requests.
-  state._initChatterMetadataListener()
+  // Initialize all listeners that broadcast information.
+  state._initBroadcastListeners()
 
   return state
 }

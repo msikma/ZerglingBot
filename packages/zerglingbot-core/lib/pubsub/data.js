@@ -1,13 +1,15 @@
 // zerglingbot <https://github.com/msikma/zerglingbot>
 // © MIT license
 
+const {unpackTwurpleData} = require('../../util/twurple.js')
+
 /**
  * Unpacks public data from PubSubRedemptionMessage objects.
  * 
  * <https://twurple.js.org/reference/pubsub/classes/PubSubRedemptionMessage.html>
  */
-const unpackRedemptionData = metaObject => {
-  const metaKeys = [
+const unpackRedemptionData = metaObject => (
+  unpackTwurpleData([
     'channelId',
     'defaultImage',
     'id',
@@ -23,15 +25,8 @@ const unpackRedemptionData = metaObject => {
     'userDisplayName',
     'userId',
     'userName'
-  ]
-
-  const data = {}
-  for (const key of metaKeys) {
-    data[key] = metaObject[key]
-  }
-
-  return data
-}
+  ], metaObject)
+)
 
 module.exports = {
   unpackRedemptionData
