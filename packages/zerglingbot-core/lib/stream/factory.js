@@ -29,20 +29,41 @@ const createListenerBroadcasterFactory = ({obsClient}) => {
   /**
    * Creates a ListenerBroadcaster.
    */
-  const createListenerBroadcaster = ({realm, getData = asyncNoop}) => {
+  const createListenerBroadcaster = ({realm, getData = asyncNoop, cacheTime = 30000}) => {
     if (lbState.listenerBroadcasters[realm]) {
       throw new Error(`Attempted to initialize a ListenerBroadcaster that already exists: "${realm}"`)
     }
 
     const state = {
-      isInitialized: false
+      isInitialized: false,
+      lastData: null,
+      lastUpdate: null
     }
   
     /**
      * Broadcasts our data.
      */
     const broadcastData = async () => {
-      const data = await getData()
+      const now = Number(new Date())
+      let data
+      if (state.lastUpdate + cacheTime > now) {
+        // Use cached info if it hasn't been that long since the last update.
+        data = state.lastData
+      }
+      else {
+        // Else, get fresh data.
+        try {
+          data = await getData()
+        }
+        catch (err) {
+          // TODO: log.
+          // Silently fail for now.
+          console.log(err)
+          return
+        }
+        state.lastData = data
+        state.lastUpdate = now
+      }
       return obsClient.call('BroadcastCustomEvent', {eventData: {realm, action: 'broadcastData', payload: data}})
     }
   
