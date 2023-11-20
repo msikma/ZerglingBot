@@ -5,6 +5,9 @@
  * Unpacks public data from Twurple objects.
  */
 const unpackTwurpleData = (keys = [], obj = {}) => {
+  if (!obj) {
+    return {}
+  }
   const data = {}
   for (const key of keys) {
     data[key] = obj[key]
