@@ -1,8 +1,7 @@
 // zerglingbot <https://github.com/msikma/zerglingbot>
 // © MIT license
 
-/** Async function that returns an empty object, used as placeholder. */
-const asyncNoop = async () => ({})
+const {createCache} = require('./util/cache')
 
 /**
  * Factory that creates a ListenerBroadcaster (lb) generator.
@@ -21,7 +20,7 @@ const createListenerBroadcasterFactory = ({obsClient}) => {
   /**
    * Runs the broadcast function for a given LB by name.
    */
-  const broadcastRealmData = (realm) => {
+  const broadcastLbRealmData = (realm) => {
     const lb = lbState.listenerBroadcasters[realm]
     return lb.broadcastData()
   }
@@ -29,7 +28,7 @@ const createListenerBroadcasterFactory = ({obsClient}) => {
   /**
    * Creates a ListenerBroadcaster.
    */
-  const createListenerBroadcaster = ({realm, getData = asyncNoop, cacheTime = 30000}) => {
+  const createListenerBroadcaster = ({realm, getData, cacheTime = 30000}) => {
     if (lbState.listenerBroadcasters[realm]) {
       throw new Error(`Attempted to initialize a ListenerBroadcaster that already exists: "${realm}"`)
     }
@@ -39,31 +38,15 @@ const createListenerBroadcasterFactory = ({obsClient}) => {
       lastData: null,
       lastUpdate: null
     }
+
+    /** Runs getData() unless the existing data is still fresh. */
+    const getDataCached = createCache(state, cacheTime, getData)
   
     /**
      * Broadcasts our data.
      */
     const broadcastData = async () => {
-      const now = Number(new Date())
-      let data
-      if (state.lastUpdate + cacheTime > now) {
-        // Use cached info if it hasn't been that long since the last update.
-        data = state.lastData
-      }
-      else {
-        // Else, get fresh data.
-        try {
-          data = await getData()
-        }
-        catch (err) {
-          // TODO: log.
-          // Silently fail for now.
-          console.log(err)
-          return
-        }
-        state.lastData = data
-        state.lastUpdate = now
-      }
+      const data = await getDataCached()
       return obsClient.call('BroadcastCustomEvent', {eventData: {realm, action: 'broadcastData', payload: data}})
     }
   
@@ -72,6 +55,7 @@ const createListenerBroadcasterFactory = ({obsClient}) => {
      */
     const initListener = async () => {
       if (state.isInitialized) return
+      state.isInitialized = true
       obsClient.addListener('CustomEvent', async ev => {
         if (ev.realm !== realm) return
         if (ev.action === 'requestData') {
@@ -91,7 +75,7 @@ const createListenerBroadcasterFactory = ({obsClient}) => {
   }
 
   return {
-    broadcastRealmData,
+    broadcastLbRealmData,
     createListenerBroadcaster
   }
 }

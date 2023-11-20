@@ -2,10 +2,11 @@
 // © MIT license
 
 const {createPredictionFileSync, unpackStreamData, unpackUserData, unpackOutcomeData, unpackPredictionData} = require('./data')
-const {createStreamInfoListenerBroadcaster} = require('./lb/stream-info')
-const {createChatterMetadataListenerBroadcaster} = require('./lb/chatter-metadata')
-const {createListenerBroadcasterFactory} = require('./factory')
-const {readChatterMetadata} = require('../data')
+const {createStreamInfoListenerBroadcaster} = require('./instance/stream-info')
+const {createChatterMetadataListenerBroadcaster} = require('./instance/chatter-metadata')
+const {createWebampCachedStore} = require('./instance/webamp-data')
+const {createListenerBroadcasterFactory} = require('./factory/listener-broadcaster')
+const {createCachedStoreFactory} = require('./factory/cached-store')
 const {setAsyncInterval} = require('../../util/async')
 const {getRandomFromArray} = require('../../util/prng')
 const {logWarn, logError} = require('../../util/log')
@@ -68,15 +69,20 @@ const createStreamInterface = async ({chatClient, apiClient, obsClient, discordC
   state.broadcasterUser = await apiClient.users.getUserByName(state.broadcasterUsername)
   state.botUser = await apiClient.users.getUserByName(state.botUsername)
 
-  // Create our ListenerBroadcaster factory so we can easily transmit data to widgets.
-  const {broadcastRealmData, createListenerBroadcaster} = createListenerBroadcasterFactory({obsClient})
+  // Create our data factories so we can easily communicate data with widgets.
+  const {broadcastLbRealmData, createListenerBroadcaster} = createListenerBroadcasterFactory({obsClient})
+  const {broadcastCsRealmData, createCachedStore} = createCachedStoreFactory({obsClient, dataPath})
   state._createListenerBroadcaster = createListenerBroadcaster
-  state.broadcastRealmData = broadcastRealmData
+  state._createCachedStore = createCachedStore
+  state.broadcastLbRealmData = broadcastLbRealmData
+  state.broadcastCsRealmData = broadcastCsRealmData
 
   /** Stream info ListenerBroadcaster. */
   createStreamInfoListenerBroadcaster(state)
   /** Chatter metadata ListenerBroadcaster. */
   createChatterMetadataListenerBroadcaster(state)
+  /** Webamp data CachedStore. */
+  createWebampCachedStore(state)
 
   /**
    * Initiates the code that updates prediction status.
