@@ -30,8 +30,7 @@ The bot requires a config file to be present at `~/.config/zerglingbot/config.js
   },
   "actions": {
     "skin": {
-      "skin_base_dir": "/path/to/Skins",
-      "skin_target_file": "/path/to/skin.txt"
+      "skin_base_dir": "/path/to/Skins"
     },
     "discord": {
       "invite_link": "https://discord.gg/link"
@@ -40,11 +39,10 @@ The bot requires a config file to be present at `~/.config/zerglingbot/config.js
   "tasks": {
     "ladderinfo": {
       "player_id": "bnet_username"
-    },
-    "winampnp": {
-      "music_path": "/path/to/music",
-      "data_path": "/path/to/music/data/winampnp"
     }
+  },
+  "music": {
+    "music_library_dir": "/path/to/music/files"
   },
   "chat": {
     "auth_username": "ZerglingBot",
