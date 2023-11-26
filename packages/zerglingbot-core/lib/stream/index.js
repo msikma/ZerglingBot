@@ -4,7 +4,8 @@
 const {createPredictionFileSync, unpackStreamData, unpackUserData, unpackOutcomeData, unpackPredictionData} = require('./data')
 const {createStreamInfoListenerBroadcaster} = require('./instance/stream-info')
 const {createChatterMetadataListenerBroadcaster} = require('./instance/chatter-metadata')
-const {createWebampCachedStore} = require('./instance/webamp-data')
+const {createWebampDataCachedStore} = require('./instance/webamp-data')
+const {createNpDataCachedStore} = require('./instance/np-data')
 const {createListenerBroadcasterFactory} = require('./factory/listener-broadcaster')
 const {createCachedStoreFactory} = require('./factory/cached-store')
 const {setAsyncInterval} = require('../../util/async')
@@ -61,6 +62,9 @@ const createStreamInterface = async ({chatClient, apiClient, obsClient, discordC
     config,
     dataPath,
 
+    // Public interface for various parts of the stream interface.
+    webampData: null,
+
     // Listener functions that must be called once during startup.
     initListeners: []
   }
@@ -81,8 +85,11 @@ const createStreamInterface = async ({chatClient, apiClient, obsClient, discordC
   createStreamInfoListenerBroadcaster(state)
   /** Chatter metadata ListenerBroadcaster. */
   createChatterMetadataListenerBroadcaster(state)
-  /** Webamp data CachedStore. */
-  createWebampCachedStore(state)
+
+  /** Webamp data CachedStore instance. */
+  createWebampDataCachedStore(state)
+  /** Now Playing data CachedStore instance. */
+  createNpDataCachedStore(state)
 
   /**
    * Initiates the code that updates prediction status.

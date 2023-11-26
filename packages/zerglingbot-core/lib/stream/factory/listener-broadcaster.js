@@ -35,8 +35,8 @@ const createListenerBroadcasterFactory = ({obsClient}) => {
 
     const state = {
       isInitialized: false,
-      lastData: null,
-      lastUpdate: null
+      latestData: null,
+      latestUpdate: null
     }
 
     /** Runs getData() unless the existing data is still fresh. */

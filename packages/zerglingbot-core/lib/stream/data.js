@@ -139,19 +139,19 @@ const createPredictionFileSync = async (pathData) => {
       _data: {},
       outcomes: []
     },
-    lastData: {}
+    latestData: {}
   }
   // Keep a copy of the previous data to 
-  state.lastData = {...state.data}
+  state.latestData = {...state.data}
   
   /** Writes current state to the file. */
   const updateContent = async (force = false) => {
     // Don't update if nothing changed.
-    if (!force && isEqual(state.lastData, state.data)) {
+    if (!force && isEqual(state.latestData, state.data)) {
       return
     }
     await fsync.updateContent({...state.data, lastUpdated: new Date()})
-    state.lastData = {...state.data}
+    state.latestData = {...state.data}
   }
 
   /** Sets an extra bit of custom data. */

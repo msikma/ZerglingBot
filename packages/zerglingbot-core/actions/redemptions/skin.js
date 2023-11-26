@@ -3,7 +3,10 @@
 
 const {log} = require('../../util/log')
 const {getRandomPercentage, getRandomFromArrayWithoutLast} = require('../../util/prng')
-const {getStoredSkin, setRandomSkin, getRandomSkin, getSkinPool, searchSkinPool} = require('../../lib/winamp')
+const {getRandomSkin, getSkinName, getSkinPool, searchSkinPool} = require('../../lib/winamp')
+
+// The skin we'll use if no skin has been set at all.
+const DEFAULT_SKIN = `[base-2.91.wsz`
 
 /**
  * Returns a randomly picked skin.
@@ -12,8 +15,7 @@ const getSkinRandomly = async (basedir, file) => {
   const options = {regularSkins: true, genericSkins: getRandomPercentage(0.2)}
 
   // Pick a random skin (with the exception of the last pick) and save it to the target file.
-  const stored = await getStoredSkin(file)
-  const random = await getRandomSkin(stored, options, basedir)
+  const random = await getRandomSkin(file, options, basedir)
 
   return {
     skin: random
@@ -37,8 +39,7 @@ const getSkinBySearchTerm = async (basedir, file, searchTerm) => {
   }
 
   // Pick a random skin from the list of results, except for the last pick.
-  const stored = await getStoredSkin(file)
-  const random = getRandomFromArrayWithoutLast(results, stored, (item, lastItem) => item.item[0] === lastItem)
+  const random = getRandomFromArrayWithoutLast(results, file, (item, lastItem) => item.item[0] === lastItem)
 
   log`Searched Winamp skins for term {red ${searchTerm}} and found {green ${results.length}} result${results.length !== 1 ? 's' : ''} - result score: {yellow ${random.score.toFixed(1)}}`
 
@@ -65,14 +66,14 @@ const getNewSkin = async (basedir, file, type, searchTerm) => {
 /**
  * Returns a feedback string to the user as a result of their redemption.
  */
-const getResultFeedback = (result, skinObj, searchTerm) => {
+const getResultFeedback = (result, skinName, searchTerm) => {
   const items = []
   let hasSkinName = false
 
   if (result.amount != null) {
     // If there were no results, alert the user we're picking a random one instead.
     if (result.amount === 0) {
-      items.push([`Found 0 search results for "${searchTerm}". Picking a random skin instead: ${skinObj.name}.`, false])
+      items.push([`Found 0 search results for "${searchTerm}". Picking a random skin instead: ${skinName}.`, false])
       hasSkinName = true
     }
     // If we found multiple results while searching for the user's search term,
@@ -83,7 +84,7 @@ const getResultFeedback = (result, skinObj, searchTerm) => {
   }
   
   if (!hasSkinName) {
-    items.push([`Changed Winamp skin to: ${skinObj.name}.`, false])
+    items.push([`Changed Winamp skin to: ${skinName}.`, false])
   }
 
   return items
@@ -114,18 +115,26 @@ const skin = {
   action: async ({apiClient, streamInterface}, type, msg, config, msgObject) => {
     // Base directory in which we keep skins.
     const basedir = config.skin_base_dir
-    // Path to the filename where we'll store the current skin we want.
-    const file = config.skin_target_file
 
-    const result = await getNewSkin(basedir, file, type, msg?.trim())
-    const skinObj = await setRandomSkin(result.skin, basedir, file)
-    const feedbackItems = getResultFeedback(result, skinObj, msg?.trim())
+    // When setting a new skin, we always need to know the current skin first.
+    // That way we can avoid setting the same skin that we already have.
+    const currentData = await streamInterface.webampData.getData()
+    const currentSkin = currentData?.skinfn ?? DEFAULT_SKIN
+    
+    // Find a new skin; either a fully random one, or based on the search query.
+    const result = await getNewSkin(basedir, currentSkin, type, msg?.trim())
+    const skinName = getSkinName(result.skin)
 
-    for (const item of feedbackItems) {
+    // Save the skin and update the player.
+    await streamInterface.webampData.setSkin(result.skin)
+    await streamInterface.webampData.broadcastNewSkin()
+
+    // Post feedback to the user who requested the change.
+    for (const item of getResultFeedback(result, skinName, msg?.trim())) {
       await streamInterface.postToChannelID(item[0], item[1])
     }
 
-    log`Updated Winamp skin to {blue ${skinObj.name}}`
+    log`Updated Winamp skin to {blue ${skinName}}`
   }
 }
 

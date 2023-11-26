@@ -59,40 +59,9 @@ const getRandomSkin = async (lastSkin, {regularSkins = true, genericSkins = true
   return getRandomFromArrayWithoutLast(files, lastSkin)
 }
 
-/**
- * Saves a chosen skin filename to the target file and returns an object with information about it.
- */
-const setRandomSkin = async (skin, basedir, target) => {
-  // Store the randomly chosen skin name so that Winamp will update,
-  // assuming the listener program is running.
-  await fs.writeFile(target, `${skin}`, 'utf8')
-
-  return {
-    filename: skin,
-    name: getSkinName(skin)
-  }
-}
-
-/**
- * Returns the content of the skin target file, i.e. the last stored skin.
- * 
- * If the file does not exist or does not contain anything, 'null' is returned instead.
- */
-const getStoredSkin = async (target) => {
-  try {
-    const content = await fs.readFile(target, 'utf8')
-    const lines = content.trim().split(/\r?\n/)
-    return lines[0] === '' ? null : lines[0].trim()
-  }
-  catch {
-    return null
-  }
-}
-
 module.exports = {
   getRandomSkin,
+  getSkinName,
   getSkinPool,
-  getStoredSkin,
-  searchSkinPool,
-  setRandomSkin
+  searchSkinPool
 }

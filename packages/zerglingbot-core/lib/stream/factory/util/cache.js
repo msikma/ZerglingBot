@@ -8,11 +8,13 @@ const asyncNoop = async () => ({})
  * Returns a function that loads data either from cache or from the source, and updates the state.
  */
 const createCache = (state, cacheTime, getData = asyncNoop) => {
-  return async () => {
+  return async (force) => {
     const now = Number(new Date())
-    if (state.lastUpdate + cacheTime > now) {
+    const forceCache = force === 'cache'
+    const forceFresh = force === 'fresh'
+    if ((state.latestUpdate + cacheTime > now || forceCache) && !forceFresh) {
       // Use cached info if it hasn't been that long since the last update.
-      return state.lastData
+      return state.latestData
     }
     else {
       // Else, get fresh data.
@@ -26,8 +28,8 @@ const createCache = (state, cacheTime, getData = asyncNoop) => {
         console.log(err)
         return
       }
-      state.lastData = data
-      state.lastUpdate = now
+      state.latestData = data
+      state.latestUpdate = now
       return data
     }
   }
