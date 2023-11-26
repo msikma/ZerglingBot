@@ -23,6 +23,8 @@ const main = async () => {
   parser.add_argument('--no-logging', {help: 'skips remote logging to Discord', dest: 'noRemoteLogging', action: 'store_true'})
   parser.add_argument('--log-dates', {help: 'includes dates in the logger (for cron)', dest: 'includeDates', action: 'store_true'})
 
+  parser.add_argument('--run-music-indexer', {help: 'runs the music indexing script', dest: 'actionIndexMusic', action: 'store_true'})
+
   parser.add_argument('--path-ffmpeg', {help: 'path to the ffmpeg binary', dest: 'pathFFMPEG', metavar: 'PATH', default: `/usr/local/bin/ffmpeg`})
   parser.add_argument('--path-ffprobe', {help: 'path to the ffprobe binary', dest: 'pathFFProbe', metavar: 'PATH', default: `/usr/local/bin/ffprobe`})
   parser.add_argument('--path-say', {help: 'path to the say binary', dest: 'pathSay', metavar: 'PATH', default: `/usr/bin/say`})
@@ -38,6 +40,11 @@ const main = async () => {
   // Request that the active instance exits.
   if (args.requestRestart) {
     await fs.writeFile(path.join(args.pathConfig, 'restart.json'), JSON.stringify({date: `${new Date().toISOString()}`}), 'utf8')
+  }
+  if (args.actionIndexMusic) {
+    const {runMusicIndexer} = await import('./actions/music-indexer.js')
+    runMusicIndexer(args)
+
   }
   else {
     // Start the bot.
