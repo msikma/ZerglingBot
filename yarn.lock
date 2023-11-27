@@ -3193,7 +3193,7 @@ music-metadata@^8.1.4:
 
 "musidx@https://github.com/msikma/musidx":
   version "0.1.1"
-  resolved "https://github.com/msikma/musidx#128e0858efde0eda6ebd58a06546075e498a3655"
+  resolved "https://github.com/msikma/musidx#873757ecc6ca6aa7bb75d86e869eb4d96b1bdefa"
   dependencies:
     fast-glob "^3.3.1"
     lodash.clonedeep "^4.5.0"
