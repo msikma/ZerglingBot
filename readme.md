@@ -42,7 +42,8 @@ The bot requires a config file to be present at `~/.config/zerglingbot/config.js
     }
   },
   "music": {
-    "music_library_dir": "/path/to/music/files"
+    "music_library_dir": "/path/to/music/files",
+    "winamp_dir": "/path/to/winamp"
   },
   "chat": {
     "auth_username": "ZerglingBot",
