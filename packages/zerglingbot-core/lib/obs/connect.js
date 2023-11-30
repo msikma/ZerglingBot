@@ -70,6 +70,7 @@ function openObsWebsocket(credentials) {
     }
   }
 
+  /** Initializes the connection. */
   async function connect() {
     log`Connecting to ${new URL(state.credentials.address).host}`
     while (true) {
@@ -115,6 +116,14 @@ function openObsWebsocket(credentials) {
       }
     }
   }
+
+  /** The ping/pong listener that's used to determine if the bot is active. */
+  obs.addListener('CustomEvent', ev => {
+    if (ev.realm !== 'zerglingbot_ping' || ev.type !== 'ping') {
+      return
+    }
+    obs.call('BroadcastCustomEvent', {eventData: {...ev, type: 'pong', realm: 'zerglingbot_ping'}})
+  })
 
   return {
     obs,
