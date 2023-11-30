@@ -36,17 +36,20 @@ const parseVoiceLine = line => {
   // Split line into a section containing the name and language, and the example sentence.
   const [header, example] = line.split(/#\s/)
   
-  // Safest way to split: by 3 characters of whitespace or more.
-  const items = header.trim().split(/(\s{3,})/)
-  if (items.length !== 3) {
+  // Headers always contain a language code; this is either like en_US or like ar_001.
+  const items = header.trim().match(/^(.+?) ([a-z]{2}_([A-Z]{2}|[0-9]{3}))$/)
+  if (!items) {
     throw new Error(`could not parse line: "${line}", "${items}"/"${example}"`)
   }
+  // Voice names can have language information inside quotation marks, e.g. "Reed (Portuguese (Brazil))".
+  const name = items[1].trim().match(/^(.+?)(\((.+?)\))?$/)
 
   // Split language by main and subcategory.
   const language = items[2].trim().split(/[_-]/)
 
   return {
-    name: items[0].trim(),
+    name: name[1].trim(),
+    locale: name[3] ? name[3].trim() : null,
     language,
     example: example.trim()
   }
