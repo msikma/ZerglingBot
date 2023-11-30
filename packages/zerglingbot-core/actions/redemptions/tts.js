@@ -15,6 +15,7 @@
 //   name: 'tts',
 //   rewardIDs: {
 //     '4d8503fa-19be-434f-8198-dea2b30b9bff': 'speakMyMessage',
+//     '2658cb97-11ed-47c9-b704-29c436716bcd': 'speakMyMessageLocal'
 //   },
 //   help: `Generates a TTS message and plays it back on the stream.`,
 //   action: async ({apiClient, chatClient}, type, msg, config, msgObject) => {

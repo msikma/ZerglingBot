@@ -23,6 +23,8 @@ const {pickTTSConfig} = require('./config')
  * 
  * Each message has its guid registered in the queue so that it's only uttered once.
  * Queue items are removed after a minute passes (purely for memory reasons).
+ *
+ * Multiple TTS handlers are identified by a "ttsType" option.
  */
 const createChatTTS = async (obsClient, streamInterface, options) => {
   const state = {
@@ -64,6 +66,7 @@ const createChatTTS = async (obsClient, streamInterface, options) => {
    *       b: 'rgb(255, 191, 0)'
    *     }
    *   },
+   *   type: 'remote',
    *   queue: 'chat:unqueued',
    *   seed: 'Undeviginti19',
    *   text: 'He can still win this one'
@@ -82,6 +85,7 @@ const createChatTTS = async (obsClient, streamInterface, options) => {
         logWarn`Killing TTS message: {green ${ev.seed}}: {yellow ${ev.text}} ({blue ${ev.id}})`
       }
       if (ev.realm !== 'tts_source') return
+      if (ev.type !== options.ttsType) return
       if (state.blacklistedUsers.includes(ev?.seed)) return
       if (state.messageQueue[ev?.id] && !state.ignoreQueue) return
 

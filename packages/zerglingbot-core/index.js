@@ -67,7 +67,8 @@ function ZerglingBot({pathConfig, pathCache, pathFFMPEG, pathFFProbe, pathSay, p
 
     // Special tools for the stream.
     streamTools: {
-      chatTTS: null
+      chatRemoteTTS: null,
+      chatLocalTTS: null
     },
 
     // The config and cache files (in ~/.config/ and ~/.cache/).
@@ -209,9 +210,18 @@ function ZerglingBot({pathConfig, pathCache, pathFFMPEG, pathFFProbe, pathSay, p
    */
   async function initTTS() {
     const configTTS = pickTTSConfig(state.config)
-    const chatTTS = await createChatTTS(state.obsClient, state.streamInterface, {...configTTS, pathFFMPEG, pathSay})
-    chatTTS.setUserBlocklist([state.config.app.bot_username])
-    state.streamTools.chatTTS = chatTTS
+    const argsTTS = {...configTTS, pathFFMPEG, pathSay}
+
+    // Create the "remote" TTS generator (using an external API).
+    const chatRemoteTTS = await createChatTTS(state.obsClient, state.streamInterface, {...argsTTS, useLocal: false, ttsType: 'remote'})
+    chatRemoteTTS.setUserBlocklist([state.config.app.bot_username])
+
+    // Create the "local" TTS generator (generating messages on the server).
+    const chatLocalTTS = await createChatTTS(state.obsClient, state.streamInterface, {...argsTTS, useLocal: true, ttsType: 'local'})
+    chatLocalTTS.setUserBlocklist([state.config.app.bot_username])
+    
+    state.streamTools.chatTTSRemote = chatRemoteTTS
+    state.streamTools.chatTTSLocal = chatLocalTTS
   }
 
   /**
