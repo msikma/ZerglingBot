@@ -9,27 +9,28 @@ const voiceTypes = {
         name: 'Bad News',
         altName: 'BadNews'
       },
-      {
-        name: 'Albert',
-        settings: {volume: 1, rate: 1, pitch: 0}
-      },
-      'Bahh',
+      // {
+      //   name: 'Albert',
+      //   settings: {volume: 1, rate: 1, pitch: 0}
+      // },
+      //'Bahh',
       {
         name: 'Bells',
         settings: {rate: 1.25}
       },
-      'Boing',
-      'Bubbles',
-      'Deranged',
+      //'Boing',
+      //'Bubbles',
+      //'Deranged', // named "Bahh" in later macOS versions
       'Cellos',
       {
         name: 'Good News',
         altName: 'GoodNews'
       },
       'Trinoids',
-      'Hysterical',
+      //'Hysterical', // named "Jester" in later macOS versions
+      //'Jester',
       'Zarvox',
-      'Whisper',
+      //'Whisper',
       {
         name: 'Pipe Organ',
         altName: 'Organ'
