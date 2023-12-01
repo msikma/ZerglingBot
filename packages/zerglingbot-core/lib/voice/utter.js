@@ -50,7 +50,7 @@ const utterMessageRemote = async (message, seed, options) => {
  */
 const utterMessageLocal = async (message, seed, options) => {
   const voices = await getVoiceList(options)
-  const eligible = getEligibleVoices(message, null, null, voices)
+  const eligible = getEligibleVoices(message, null, options.localCategory ?? null, voices)
   const voice = pickVoice(eligible, seed, true)
   const buffer = await getUtteranceBuffer(message, voice, voice.settings, options.binPaths)
 
