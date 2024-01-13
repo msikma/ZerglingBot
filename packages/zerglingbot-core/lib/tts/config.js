@@ -7,7 +7,7 @@
 const pickTTSConfig = config => {
   const tts = config.tts
   return {
-    useLocal: tts.use_local,
+    useOnlyLocal: tts.use_only_local,
     localCategory: tts.local_category,
     filterTo: tts.filter_to
   }

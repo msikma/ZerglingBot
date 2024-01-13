@@ -4,14 +4,21 @@
 const fetch = require('node-fetch')
 const {countBytes} = require('../../util/misc')
 
+// Fake user agent used to ensure our requests get honored.
+const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0'
+
 /**
  * Returns an utterance request object.
  */
 const getUtteranceReq = async (text, voice, url) => {
+  const body = new URLSearchParams({text, voice})
   return fetch(url, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({text, voice})
+    headers: {
+      'User-Agent': USER_AGENT,
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+    },
+    body
   })
 }
 

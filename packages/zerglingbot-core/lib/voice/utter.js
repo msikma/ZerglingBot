@@ -13,15 +13,15 @@ const {getUtteranceBuffer} = require('./exec')
  * If a remote voice is requested, the local voice will be returned if there's an issue.
  */
 const utterMessage = async (message, seed, options) => {
-  if (options.useLocal) {
+  if (options.ttsType === 'local' || options.useOnlyLocal) {
     return utterMessageLocal(message, seed, options)
   }
   try {
     const utterance = await utterMessageRemote(message, seed, options)
     return utterance
   }
-  catch {
-    return utterMessageLocal(message, seed, options)
+  catch (err) {
+    return utterMessageLocal(message, seed, {...options, useOnlyLocal: true})
   }
 }
 

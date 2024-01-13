@@ -117,7 +117,7 @@ const getRemoteVoices = (remoteVoiceTypes, {filterTo = null} = {}) => {
  * Returns a categorized list of available voices.
  */
 const getVoiceList = async (options = {}) => {
-  if (options.useLocal) {
+  if (options.ttsType === 'local' || options.useOnlyLocal) {
     const voices = await getLocalVoices(options)
     return removeUndecorated(voices.map(voice => getDecoratedVoice(voice, localVoiceTypes)))
   }

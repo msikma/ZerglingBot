@@ -213,11 +213,11 @@ function ZerglingBot({pathConfig, pathCache, pathFFMPEG, pathFFProbe, pathSay, p
     const argsTTS = {...configTTS, pathFFMPEG, pathSay}
 
     // Create the "remote" TTS generator (using an external API).
-    const chatRemoteTTS = await createChatTTS(state.obsClient, state.streamInterface, {...argsTTS, useLocal: false, ttsType: 'remote'})
+    const chatRemoteTTS = await createChatTTS(state.obsClient, state.streamInterface, {...argsTTS, ttsType: 'remote'})
     chatRemoteTTS.setUserBlocklist([state.config.app.bot_username])
 
     // Create the "local" TTS generator (generating messages on the server).
-    const chatLocalTTS = await createChatTTS(state.obsClient, state.streamInterface, {...argsTTS, useLocal: true, ttsType: 'local'})
+    const chatLocalTTS = await createChatTTS(state.obsClient, state.streamInterface, {...argsTTS, ttsType: 'local'})
     chatLocalTTS.setUserBlocklist([state.config.app.bot_username])
     
     state.streamTools.chatTTSRemote = chatRemoteTTS
