@@ -20,11 +20,22 @@ const getTag = (type, value = 1, rel = false) => {
 }
 
 /**
+ * Removes injected utterance commands from input text.
+ */
+const cleanUtterance = (text) => {
+  return text.replace(/(\[\[([^]]*)\]\])/, '')
+}
+
+/**
  * Returns a text utterance that includes all settings in the form of tags.
  */
-const getUtterancePrompt = (text, settings) => {
-  const header = [getTag('volm', settings.volume), getTag('rate', settings.rate), getTag('pbas', settings.pitch, true)].join('')
-  return `[[rset 0]] ${header} ${text}`
+const getUtterancePrompt = (text, settings, useVolume = false, usePitch = false, useRate = true) => {
+  const header = [
+    useVolume ? getTag('volm', settings.volume) : null,
+    useRate ? getTag('rate', settings.rate) : null,
+    usePitch ? getTag('pbas', settings.pitch, true) : null
+  ].filter(h => h).join('')
+  return cleanUtterance(text).split('\n').map(line => `[[rset]] ${header} ${line}`).join(' ')
 }
 
 /**
