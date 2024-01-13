@@ -21,7 +21,7 @@ const utterMessage = async (message, seed, options) => {
     return utterance
   }
   catch (err) {
-    return utterMessageLocal(message, seed, {...options, useOnlyLocal: true})
+    return utterMessageLocal(message, seed, {...options, useOnlyLocal: true, localCategory: options.localFallbackCategory})
   }
 }
 

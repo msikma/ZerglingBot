@@ -91,7 +91,7 @@ const getEligibleVoices = (text, gender, category, voices) => {
  * 
  * This just takes the content from remote/voice-types.js and flattens it.
  */
-const getRemoteVoices = (remoteVoiceTypes, {filterTo = null} = {}) => {
+const getRemoteVoices = (remoteVoiceTypes, {remoteVoiceName = null} = {}) => {
   const defaultLanguage = ['en', 'us']
   const defaultExample = 'This is a test.'
 
@@ -106,8 +106,8 @@ const getRemoteVoices = (remoteVoiceTypes, {filterTo = null} = {}) => {
       })
     }
   }
-  if (filterTo) {
-    return voices.filter(voice => voice.name === filterTo)
+  if (remoteVoiceName) {
+    return voices.filter(voice => voice.name === remoteVoiceName)
   }
 
   return voices
