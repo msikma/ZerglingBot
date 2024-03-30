@@ -1,0 +1,77 @@
+{
+  "app": {
+    "credentials": {
+      "client_id": "foo",
+      "client_secret": "foo",
+      "redirect_uri": "http://localhost:3000"
+    },
+    "broadcaster_username": "foo",
+    "bot_username": "foo"
+  },
+  "discord": {
+    "system": {
+      "server": "123",
+      "log_channel": "123",
+      "log_error_channel": "123",
+      "announcements_channel": "123"
+    },
+    "credentials": {
+      "client_id": "foo",
+      "token": "foo"
+    },
+    "bot": {
+      "footer_icon": "http://example.com/image.jpg"
+    }
+  },
+  "obs": {
+    "address": "ws://localhost:4455",
+    "password": "foo"
+  },
+  "actions": {
+    "skin": {
+      "skin_base_dir": "/path/to/foo"
+    },
+    "reply": {
+      "triggers": [
+        {
+          "triggers": ["foo"],
+          "enabled": true,
+          "help": "Foo help text.",
+          "reply": "Foo reply text."
+        }
+      ]
+    }
+  },
+  "tasks": {
+    "ladderinfo": {
+      "player_id": "foo",
+      "player_region": "eu"
+    },
+    "announcements": {
+    }
+  },
+  "tts": {
+    "use_only_local": false,
+    "local_fallback_category": "genTwo",
+    "local_category": "novelty",
+    "remote_voice_name": "Brian"
+  },
+  "music": {
+    "music_library_dir": "/path/to/foo",
+    "winamp_dir": "/path/to/foo",
+    "winamp_win32_basedir": "C:\\Foo"
+  },
+  "chat": {
+    "auth_code": "foo",
+    "nickname": "foo",
+    "channels": {
+      "123": "Foo"
+    },
+    "default_channel": "123"
+  },
+  "twitch": {
+    "auth_code": "foo",
+    "username": "foo",
+    "id": "123"
+  }
+}
