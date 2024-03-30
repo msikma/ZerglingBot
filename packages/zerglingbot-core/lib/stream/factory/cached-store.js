@@ -3,6 +3,7 @@
 
 const fs = require('fs/promises')
 const path = require('path')
+const {sleep} = require('../../../util/misc')
 const {createCache} = require('./util/cache')
 
 /**
@@ -36,6 +37,7 @@ const createCachedStoreFactory = ({obsClient, dataPath}) => {
     const filepath = path.join(dataPath, file ? file : `${realm}.json`)
 
     const state = {
+      _queueInterval: null,
       isInitialized: false,
       latestData: null,
       latestUpdate: null
@@ -67,7 +69,7 @@ const createCachedStoreFactory = ({obsClient, dataPath}) => {
     const _queueUpdate = (data, overwrite) => {
       const now = Number(new Date())
       _queueItems.push([now, data, overwrite])
-      _processQueue()
+      return _processQueue()
     }
 
     /**
@@ -104,7 +106,7 @@ const createCachedStoreFactory = ({obsClient, dataPath}) => {
      * Stores new data to the cache file.
      */
     const storeData = async (newData, overwrite = true) => {
-      _queueUpdate(newData, overwrite)
+      return _queueUpdate(newData, overwrite)
     }
 
     /**
@@ -131,6 +133,17 @@ const createCachedStoreFactory = ({obsClient, dataPath}) => {
         }
       })
     }
+
+    /**
+     * Starts running queue updates.
+     */
+    const initQueue = async () => {
+      if (state._queueInterval !== null) return
+      await sleep(Math.floor(Math.random() * 1000))
+      state._queueInterval = setInterval(_processQueue, 1000)
+    }
+
+    initQueue()
 
     const cs = {
       getData: getDataCached,
