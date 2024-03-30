@@ -25,7 +25,7 @@ const createCache = (state, cacheTime, getData = asyncNoop) => {
       catch (err) {
         // TODO: log.
         // Silently fail for now.
-        console.log(err)
+        console.error(err)
         return
       }
       state.latestData = data
