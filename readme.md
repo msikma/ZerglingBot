@@ -2,6 +2,8 @@
 
 # ZerglingBot
 
+![alt text](resources/zergling-small.png)
+
 The primary bot for the [Dada78641 Twitch stream](https://www.twitch.tv/dada78641). It contains the following components:
 
 * Twitch chat bot
@@ -9,89 +11,13 @@ The primary bot for the [Dada78641 Twitch stream](https://www.twitch.tv/dada7864
 * OBS websocket interface
 * Backend tools for obtaining data, e.g. from StarCraft and Winamp
 
-These components work together to operate the stream.
+These components work together to operate the stream in conjunction with the [widgets](https://github.com/msikma/stream-dada78641-widgets).
 
 This bot is designed specifically for my stream and is not a general purpose program.
 
 ## Configuration
 
-The bot requires a config file to be present at `~/.config/zerglingbot/config.json`. The following is an example:
-
-```json
-{
-  "app": {
-    "client_id": "id",
-    "client_secret": "secret",
-    "redirect_uri": "http://localhost:3000"
-  },
-  "obs": {
-    "address": "localhost:4444",
-    "password": "password"
-  },
-  "actions": {
-    "skin": {
-      "skin_base_dir": "/path/to/Skins"
-    },
-    "discord": {
-      "invite_link": "https://discord.gg/link"
-    }
-  },
-  "tasks": {
-    "ladderinfo": {
-      "player_id": "bnet_username"
-    }
-  },
-  "music": {
-    "music_library_dir": "/path/to/music/files",
-    "winamp_dir": "/path/to/winamp"
-  },
-  "chat": {
-    "auth_username": "ZerglingBot",
-    "channels": {
-      "1234": "Username"
-    },
-    "token": {
-      "access_token": "token",
-      "scope": ["chat:edit", "chat:read"],
-      "token_type": "bearer"
-    }
-  },
-  "twitch": {
-    "auth_code": "code",
-    "scope": [
-      "bits:read",
-      "channel:manage:broadcast",
-      "channel:manage:polls",
-      "channel:manage:predictions",
-      "channel:manage:raids",
-      "channel:manage:redemptions",
-      "channel:manage:vips",
-      "channel:read:goals",
-      "channel:read:predictions",
-      "channel:read:redemptions",
-      "channel:read:vips",
-      "clips:edit",
-      "moderation:read",
-      "moderator:manage:announcements",
-      "moderator:manage:banned_users",
-      "moderator:manage:chat_messages",
-      "moderator:manage:chat_settings",
-      "moderator:read:chat_settings",
-      "user:edit",
-      "user:manage:chat_color",
-      "user:read:broadcast",
-      
-      "channel:moderate",
-      "chat:edit",
-      "chat:read",
-      "whispers:read",
-      "whispers:edit"
-    ],
-    "username": "dada78641",
-    "id": "1234"
-  }
-}
-```
+The bot requires a config file to be present at `~/.config/zerglingbot/config.json`. See [the example config file](resources/sample.config.json) and modify it with your own data.
 
 ### Getting a token for the config file
 
@@ -111,10 +37,8 @@ For more information, see Twitch's [Getting OAuth Access Tokens](https://dev.twi
 ## Prerequisites
 
 * Node v16.0 or up
-* OBS websocket v4.9
-* [ffmpeg](https://ffmpeg.org/)
-* [bnetdata](https://github.com/msikma/bnetdata) – needed for the StarCraft data component
-* [Dada Skin Changer](https://github.com/msikma/dada-skin-changer) – needed for communicating with the Winamp instance
+* OBS websocket v5.1.0
+* [ffmpeg](https://ffmpeg.org/) – for running the TTS module
 
 ## Links
 
