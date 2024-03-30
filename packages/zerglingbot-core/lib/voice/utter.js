@@ -1,6 +1,7 @@
 // zerglingbot <https://github.com/msikma/zerglingbot>
 // © MIT license
 
+const {log, logWarn, logError} = require('../../util/log')
 const {getVoiceList, getEligibleVoices, pickVoice} = require('./voices')
 const {getRemoteUtteranceBuffer} = require('./fetch')
 const {getUtteranceBuffer} = require('./exec')
@@ -21,6 +22,7 @@ const utterMessage = async (message, seed, options) => {
     return utterance
   }
   catch (err) {
+    logError(`Error generating remote utterance:`, err)
     return utterMessageLocal(message, seed, {...options, useOnlyLocal: true, localCategory: options.localFallbackCategory})
   }
 }

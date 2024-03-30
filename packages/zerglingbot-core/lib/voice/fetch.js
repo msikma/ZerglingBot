@@ -5,7 +5,7 @@ const fetch = require('node-fetch')
 const {countBytes} = require('../../util/misc')
 
 // Fake user agent used to ensure our requests get honored.
-const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0'
+const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:124.0) Gecko/20100101 Firefox/124.0'
 
 /**
  * Returns an utterance request object.
@@ -16,6 +16,7 @@ const getUtteranceReq = async (text, voice, url) => {
     method: 'POST',
     headers: {
       'User-Agent': USER_AGENT,
+      'Referer': 'https://streamlabs.com/',
       'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
     },
     body
@@ -54,7 +55,7 @@ const getRemoteUtteranceObject = async (text, voice, service, settings = {}, for
   catch (err) {
     return {
       success: false,
-      error: err?.error ?? null,
+      error: err?.error ?? err,
       bytes
     }
   }
