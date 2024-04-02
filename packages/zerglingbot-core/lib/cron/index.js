@@ -3,6 +3,7 @@
 
 const {sleep} = require('../../util/misc')
 const {makeToolLogger} = require('../../util/log')
+const {isTempObsWsError} = require('../../util/error')
 const tasks = require('./tasks')
 
 /** Stream state. */
@@ -59,7 +60,7 @@ const startCronTask = (name, task, state, time) => {
       }
       catch (err) {
         // Ignore temporary connection errors.
-        if (String(err).includes('Not connected')) {
+        if (isTempObsWsError(err)) {
           continue
         }
         if (!taskState.hasErrored) {

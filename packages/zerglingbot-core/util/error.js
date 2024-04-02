@@ -66,6 +66,24 @@ const extractErrorFields = error => {
 const errorMember = (err, path, fallback = '') => get(err, path, get(err, `error.${path}`, fallback))
 
 /**
+ * Returns true for errors that are temporary OBS Websocket errors.
+ */
+const isTempObsWsError = error => {
+  if (!error) return false
+  const errString = String(error)
+  const okSubStrings = [
+    // When OBS is not connected. Usually means OBS is not active.
+    'Not connected',
+    // When a request is fired before OBS has finished starting up.
+    'OBS is not ready to perform the request',
+    // When attempting to send a request before identification has happened.
+    // Caused by a race condition when running a task before OBS has finished started up.
+    'Socket not identified'
+  ]
+  return okSubStrings.find(str => errString.includes(str))
+}
+
+/**
  * Returns true for errors that are temporary network errors that can safely be ignored.
  */
 const isTempError = error => {
@@ -137,6 +155,7 @@ class InternalError extends Error {
 module.exports = {
   InternalError,
   isTempError,
+  isTempObsWsError,
   getErrorString,
   extractErrorFields
 }
