@@ -51,7 +51,7 @@ const createDiscordLogger = async (discordClient, discordData, config, programDa
       Node ${process.version}
     `.trim(), inline: true})
     embed.addFields({name: 'Environment', value: `
-      ${process.env.pm_id ? `PM2${process.env._pm2_version ? ` v${process.env._pm2_version}` : ''} (PID: ${process.env.pm_id})` : `CLI`}
+      ${process.env.pm_id ? `PM2${process.env._pm2_version ? ` v${process.env._pm2_version}` : ''}${process.env.pm_id ? ` (PID: ${process.env.pm_id})` : ``}` : `CLI`}
     `.trim(), inline: true})
     embed.addFields({name: 'Commit', value: `${repo.version}`, inline: false})
     //embed.addFields({name: 'Version', value: programData.version, inline: true})
