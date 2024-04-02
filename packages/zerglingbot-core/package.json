@@ -38,6 +38,7 @@
     "obs-websocket-js": "^5.0.3",
     "proper-lockfile": "^4.1.2",
     "psaux": "^0.4.0",
+    "repoinf": "^0.1.2",
     "rmfr": "^2.0.0",
     "standard-slugify": "^3.1.1",
     "strip-ansi": "^6.0.0",

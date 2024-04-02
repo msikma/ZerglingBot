@@ -1,9 +1,13 @@
 // zerglingbot <https://github.com/msikma/zerglingbot>
 // © MIT license
 
+const process = require('process')
+const path = require('path')
 const Discord = require('discord.js')
+const {getRepoInfo, getPlatformInfo} = require('repoinf')
 const {createMessageEmbed} = require('./embed')
 const {ucFirst} = require('../../util/text')
+const {getHammerTime} = require('../../util/discord')
 const {isString, isNumber, isPlainObject, isError} = require('../../util/types')
 const {omitEmpty} = require('../../util/data')
 const {wrapForLogging} = require('../../util/formatting')
@@ -36,13 +40,23 @@ const createDiscordLogger = async (discordClient, discordData, config, programDa
    * Logs a startup message containing the current runtime information.
    */
   const logStartupMessage = async () => {
+    const repo = await getRepoInfo(getPackageRoot())
+    const platform = await getPlatformInfo()
     const embed = new Discord.EmbedBuilder()
     embed.setTitle('ZerglingBot is starting up')
-    embed.setDescription(`Logged in as [${discordClient.user.username}#${discordClient.user.discriminator}](${programData.homepage}).`)
-    embed.addFields({name: 'Version', value: programData.version, inline: true})
-    //embed.addField('Commit', `[${hydraBot.env.envRepo.version}](${hydraBot.env.packageData.homepage})`, true)
-    //embed.addField('Server', hydraBot.env.envPlatform.hostname, true)
-    //embed.addField('Last commit', getFormattedDate(hydraBot.env.envRepo.lastCommit), false)
+    embed.setDescription(`
+      Logged in as [${discordClient.user.username}#${discordClient.user.discriminator}](${programData.homepage}).
+    `.trim())
+    embed.addFields({name: 'Runtime', value: `
+      Node ${process.version}
+    `.trim(), inline: true})
+    embed.addFields({name: 'Environment', value: `
+      ${process.env.pm_id ? `PM2${process.env._pm2_version ? ` v${process.env._pm2_version}` : ''} (PID: ${process.env.pm_id})` : `CLI`}
+    `.trim(), inline: true})
+    embed.addFields({name: 'Commit', value: `${repo.version}`, inline: false})
+    //embed.addFields({name: 'Version', value: programData.version, inline: true})
+    embed.addFields({name: 'Server', value: platform.hostname, inline: false})
+    embed.addFields({name: 'Last Commit', value: getHammerTime(repo.lastCommit, 'f'), inline: false})
     embed.setFooter({text: programData.versionedName, iconURL: config.bot.footer_icon})
     embed.setTimestamp()
     await logFunctions.logInfo([{embeds: [embed]}], {isRaw: true})
@@ -213,6 +227,13 @@ const logLevelFactory = (callerManifest, logChannel, logErrorChannel) => logLeve
       targetChannels.forEach(targetChannel => targetChannel.send(group))
     }
   }
+}
+
+/**
+ * Returns the path to the ZerglingBot package.
+ */
+const getPackageRoot = () => {
+  return path.resolve(path.join(__dirname, '..', '..', '..', '..'))
 }
 
 module.exports = {
