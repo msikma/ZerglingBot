@@ -17,6 +17,7 @@
     "@twurple/auth": "^5.2.0",
     "@twurple/chat": "^5.2.0",
     "@twurple/pubsub": "^5.2.0",
+    "@dada78641/autocrop": "file:./../../../autocrop",
     "adm-zip": "^0.5.9",
     "bwrank": "https://github.com/msikma/bwrank",
     "chalk": "^4.1.2",

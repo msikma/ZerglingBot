@@ -8,6 +8,7 @@ const {createWebampDataCachedStore} = require('./instance/webamp-data')
 const {createNpDataCachedStore} = require('./instance/np-data')
 const {createListenerBroadcasterFactory} = require('./factory/listener-broadcaster')
 const {createCachedStoreFactory} = require('./factory/cached-store')
+const {initAutoCrop} = require('./features/autocrop')
 const {setAsyncInterval} = require('../../util/async')
 const {getRandomFromArray} = require('../../util/prng')
 const {logWarn, logError} = require('../../util/log')
@@ -90,6 +91,9 @@ const createStreamInterface = async ({chatClient, apiClient, obsClient, discordC
   createWebampDataCachedStore(state)
   /** Now Playing data CachedStore instance. */
   createNpDataCachedStore(state)
+  
+  /** Auto crop functionality. */
+  initAutoCrop(state)
 
   /**
    * Initiates the code that updates prediction status.
