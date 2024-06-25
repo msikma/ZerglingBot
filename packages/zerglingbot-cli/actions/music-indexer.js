@@ -2,7 +2,7 @@
 // © MIT license
 
 import path from 'path'
-import {MusicIndexer} from 'musidx'
+import {MusicIndexer} from '@dada78641/musidx'
 import {getConfig} from 'zerglingbot-core/util/config.js'
 
 /**
@@ -111,6 +111,13 @@ function getMusicProfile(pathWin32Base) {
         name: 'Module (all)',
         code: 'tracker',
         basedir: 'Tracker',
+        taxonomy: ['albumartist__or__artists', 'album'],
+        sort: [['amount', 'desc'], ['titleLc', 'asc']]
+      },
+      {
+        name: 'Mixtapes',
+        code: 'mixtapes',
+        basedir: 'Mixtapes',
         taxonomy: ['albumartist__or__artists', 'album'],
         sort: [['amount', 'desc'], ['titleLc', 'asc']]
       }
