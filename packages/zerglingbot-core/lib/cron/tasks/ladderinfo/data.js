@@ -35,7 +35,7 @@ const collectMatchData = (data, date = new Date()) => {
  */
 const getPlayerData = async (playerID, playerRegion) => {
   if (BwRank == null) {
-    BwRank = (await import('bwrank')).default
+    BwRank = (await import('@dada78641/bwrank')).default
   }
   try {
     const bwRank = await BwRank()
